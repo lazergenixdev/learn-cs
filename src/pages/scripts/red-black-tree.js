@@ -8,8 +8,6 @@ let nodeCount = 0;
 let hoveredNode = null;
 let selectedNode = null;
 
-let draws = 0;
-
 // Red: 0, Black: 1
 let root = JSON.parse(localStorage.getItem('root'));
 
@@ -243,8 +241,6 @@ function draw(ctx) {
         ctx.strokeText(p.node.value, x, y+30);
         ctx.fillText(p.node.value, x, y+30);
     });
-    draws += 1;
-    document.getElementById('draw-count').innerText = `Draw Count: ${draws}`
 }
 
 function generate_draw_data() {
@@ -372,14 +368,7 @@ function init() {
     }
     container.addEventListener('click', handleClick);
 
-    /*
-        const modal = document.getElementById('new-node-value');
-        const overlay = document.getElementById('overlay');
-        if (overlay.style.display == "none") {
-
-        }
-        */
-    container.addEventListener('keydown', function(event) {
+    container.addEventListener('keydown', (event) => {
         const modal = document.getElementById('new-node-value');
         const overlay = document.getElementById('overlay');
         
