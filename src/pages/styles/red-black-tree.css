@@ -119,6 +119,7 @@ input {
 
 #how-to {
 	display: none;
+	font-size: 20px;
 	background-color: rgba(0,0,0,0.7);
 	border-radius: 40px;
 	padding: 20px;
