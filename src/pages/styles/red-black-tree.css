@@ -125,6 +125,19 @@ input {
 	padding: 20px;
 }
 
+.straight {
+	color: hsl(49, 100%, 80%);
+}
+.kink {
+	color: hsl(263, 100%, 74%);
+}
+.red {
+	text-decoration: red underline;
+}
+.black {
+	text-decoration: #FFF underline;
+}
+
 /* Hide the spinner buttons in WebKit browsers (Chrome, Safari, etc.) */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

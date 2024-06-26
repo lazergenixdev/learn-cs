@@ -69,41 +69,41 @@
                         For every node on insertion path (top to bottom):
                         <ul>
                             <li>
-                                If node has two RED children then:
+                                If node has two <span class="red">RED</span> children then:
                             </li>
                             <ol>
                                 <li>
-                                    color the children BLACK
+                                    Color the children <span class="black">BLACK</span>
                                 </li>
                                 <li>
-                                    color the node RED (unless it's the root)
+                                    Color the node <span class="red">RED</span> (unless it's the root)
                                 </li>
                             </ol>
                         </ul>
                     </li>
                     <li>
-                        Fix any (BLACK → RED → RED) paths
+                        Fix any (<span class="black">BLACK</span> → <span class="red">RED</span> → <span class="red">RED</span>) paths
                         <ul>
                             <li>
-                                If you have a straight 3 nodes (all left children or all right children)
+                                If you have a <span class="straight">straight</span> 3 nodes (all left children or all right children)
                             </li>
                             <ol>
                                 <li>
-                                    Rotate the top RED node with it's parent and
+                                    Rotate the top <span class="red">RED</span> node with it's <span class="black">BLACK</span> parent
                                 </li>
                                 <li>
-                                    swap their colors
+                                    Swap their colorss
                                 </li>
                             </ol>
                             <li>
-                                If you have a kink (one is left child, one is right child)
+                                If you have a <span class="kink">kink</span> (one is left child, one is right child)
                             </li>
                             <ol>
                                 <li>
-                                    Rotate the two REDs to form a straight
+                                    Rotate the two <span class="red">RED</span>s to form a <span class="straight">straight</span>
                                 </li>
                                 <li>
-                                    then fix the straight
+                                    Fix the <span class="straight">straight</span>
                                 </li>
                             </ol>
                         </ul>
