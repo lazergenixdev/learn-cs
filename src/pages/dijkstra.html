@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Input</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px; /* Rounding the corners of the container */
+            background-color: #fff;
+            font-size: 16px; /* Set a base font size for consistency */
+        }
+
+        .tag {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 20px; /* Rounding the corners of the tags */
+            font-size: 16px; /* Ensure tag font size is consistent */
+        }
+
+        .tag .remove-tag {
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: bold; /* Make 'X' bold for better visibility */
+            font-size: 16px; /* Match the size of the 'X' to the tag font size */
+        }
+
+        #tagInput {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 150px;
+            margin: 5px;
+            font-size: 16px; /* Ensure input font size is consistent */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="tag-container">
+        <input type="text" id="tagInput" placeholder="Add a tag...">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tagInput = document.getElementById('tagInput');
+            const tagContainer = document.querySelector('.tag-container');
+
+            tagInput.addEventListener('keydown', function(event) {
+                if (event.key === ' ') {
+                    event.preventDefault(); // Prevent space from being added to the input
+                    const tagText = tagInput.value.trim();
+                    if (tagText) {
+                        addTag(tagText);
+                        tagInput.value = ''; // Clear the input
+                    }
+                }
+            });
+
+            tagContainer.addEventListener('click', function(event) {
+                if (event.target.classList.contains('remove-tag')) {
+                    event.target.parentElement.remove();
+                }
+            });
+
+            function addTag(text) {
+                const tag = document.createElement('div');
+                tag.classList.add('tag');
+                tag.innerHTML = `
+                    ${text}
+                    <span class="remove-tag">X</span>
+                `;
+                tagContainer.insertBefore(tag, tagInput);
+            }
+        });
+    </script>
+</body>
+</html>
