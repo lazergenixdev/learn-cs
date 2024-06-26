@@ -1,59 +1,67 @@
 export class History {
-    constructor(set) {
+    constructor(setCallback, maxSize = 80) {
         this.data = [];
-        this.index = 0;
+        this.index = -1; // Start with no states
         this.ctrlPressed = false;
-        this.set = set;
-        this.max = 80;
+        this.setCallback = setCallback;
+        this.maxSize = maxSize;
+
+        this.setupEventListeners();
     }
 
     push(state) {
-        this.data = this.data.slice(0,this.index+1);
+        // Remove future history when pushing a new state
+        this.data = this.data.slice(0, this.index + 1);
         this.data.push(state);
-        if (this.data.length > this.max) {
-            this.data = this.data.slice(-this.max);
+
+        // Limit the number of stored states
+        if (this.data.length > this.maxSize) {
+            this.data.shift(); // Remove the oldest state
         }
-        this.index = this.data.length-1;
+
+        // Move index to the new state
+        this.index = this.data.length - 1;
     }
 
     undo() {
         if (this.index > 0) {
-            this.index -= 1;
-            this.set(this.data[this.index]);
+            this.index--;
+            this.setCallback(this.data[this.index]);
         }
     }
 
     redo() {
-        if (this.index >= this.data.length-1) return;
-
-        this.index += 1;
-        this.set(this.data[this.index]);
+        if (this.index < this.data.length - 1) {
+            this.index++;
+            this.setCallback(this.data[this.index]);
+        }
     }
 
-    setup() {
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Control') {
-                this.ctrlPressed = true;
-                return;
-            }
+    setupEventListeners() {
+        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+        document.addEventListener('keyup', this.handleKeyUp.bind(this));
+        document.addEventListener('focusout', () => {this.ctrlPressed = false;});
+    }
 
-            if (event.repeat) return;
-            
-            if (this.ctrlPressed && event.key === 'z') {
-                this.undo();
-                event.preventDefault(); // Prevent default behavior (e.g., browser back)
-            } else if (this.ctrlPressed && event.key === 'r') {
-                this.redo();
-                event.preventDefault(); // Prevent default behavior (e.g., browser reload)
-            }
-        });
-        document.addEventListener('keyup', (event) => {
-            if (event.key === 'Control') {
-                this.ctrlPressed = false;
-            }
-        });
-        document.addEventListener('focusout', (event) => {
+
+    handleKeyDown(event) {
+        if (event.key === 'Control') {
+            this.ctrlPressed = true;
+            return;
+        }
+
+        if (this.ctrlPressed && event.key === 'z') {
+            this.undo();
+            event.preventDefault(); // Prevent default behavior (e.g., browser back)
+        } else if (this.ctrlPressed && event.key === 'r') {
+            this.redo();
+            event.preventDefault(); // Prevent default behavior (e.g., browser reload)
+        }
+    }
+
+    handleKeyUp(event) {
+        if (event.key === 'Control') {
             this.ctrlPressed = false;
-        });
+        }
     }
 }

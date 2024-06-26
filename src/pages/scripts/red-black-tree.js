@@ -180,6 +180,33 @@ let drawData = {
 };
 let redraw;
 
+// https://stackoverflow.com/questions/808826/draw-arrow-on-canvas-tag
+function draw_arrow(ctx, x0, y0, x1, y1, r) {
+    const width = 3;
+    const head_len = 8;
+    const head_angle = Math.PI / 6;
+    const angle = Math.atan2(y1 - y0, x1 - x0);
+  
+    ctx.lineWidth = width;
+  
+    /* Adjust the point */
+    x1 -= (width + r) * Math.cos(angle);
+    y1 -= (width + r) * Math.sin(angle);
+  
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+  
+    ctx.beginPath();
+    ctx.lineTo(x1, y1);
+    ctx.lineTo(x1 - head_len * Math.cos(angle - head_angle), y1 - head_len * Math.sin(angle - head_angle));
+    ctx.lineTo(x1 - head_len * Math.cos(angle + head_angle), y1 - head_len * Math.sin(angle + head_angle));
+    ctx.closePath();
+    ctx.stroke();
+    ctx.fill();
+  }
+
 function draw(ctx) {
     if (!redraw) return;
     redraw = false;
@@ -190,13 +217,9 @@ function draw(ctx) {
 
     // Draw tree connection lines
     drawData.lines.forEach((l) => {
-        ctx.beginPath();
-        ctx.moveTo(...l.start);
-        ctx.lineTo(...l.end);
         ctx.strokeStyle = '#FFF';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.closePath();
+        ctx.fillStyle   = '#FFF';
+        draw_arrow(ctx, ...l.start, ...l.end, 10);
     });
     
     // Draw Circle for node
@@ -243,9 +266,11 @@ function generate_draw_data() {
     hoveredNode = null;
 
     const visit_node = (node, depth) => {
-        const calc_x = (node) => (
-            ((node.index + 1) / (nodeCount + 1)) * canvasWidth
-        );
+        const calc_x = (node) => {
+            const nx = Math.min(80, canvasWidth / (nodeCount+1));
+            const w = nx * (nodeCount+1);
+            return ((node.index + 1) / (nodeCount + 1)) * w + (canvasWidth-w)/2.0;
+        }
         const calc_y = (depth) => (
             depth * Math.min(80, (canvasHeight-80)/treeHeight) + 40
         );
@@ -420,8 +445,6 @@ function init() {
         }
     }
     clearButton.addEventListener('click', clear_tree);
-
-    history.setup();
 }
 
 window.addEventListener('DOMContentLoaded', init);
