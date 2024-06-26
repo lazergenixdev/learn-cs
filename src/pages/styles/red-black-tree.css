@@ -1,5 +1,6 @@
 
 body {
+	font-family: sans-serif;
 	margin: 0;
 	height: 100vh;
 	display: grid;
@@ -65,15 +66,68 @@ input {
 	overflow: hidden;
 }
 
+#textInput {
+	position: absolute;
+	top: 0;
+	left: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
 #myCanvas {
 	width: 100%;
 	height: 100%;
 }
 
 .info {
-	font-family: sans-serif;
+	background-color: transparent;
+	user-select: none;
+	position: fixed;
+	bottom: 0;
 }
 
-li::selection {
-	background-color: transparent
+.debug {
+	position: fixed;
+	right: 0;
+	top: 0;
+
+}
+
+/* Full-screen overlay */
+#overlay {
+	display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    justify-content: center;
+    align-items: center;
+	pointer-events: none;
+}
+
+/* Modal window */
+#new-node-value {
+	display: none;
+    font-size: 40px;
+	font-weight: bold;
+    background-color: black;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Hide the spinner buttons in WebKit browsers (Chrome, Safari, etc.) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Hide the spinner buttons in Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
 }

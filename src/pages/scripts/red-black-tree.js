@@ -8,8 +8,14 @@ let nodeCount = 0;
 let hoveredNode = null;
 let selectedNode = null;
 
+let draws = 0;
+
 // Red: 0, Black: 1
 let root = JSON.parse(localStorage.getItem('root'));
+
+function save_tree() {
+    localStorage.setItem('root', JSON.stringify(tree_copy(root)));
+}
 
 const RED   = 0;
 const BLACK = 1;
@@ -88,22 +94,17 @@ function insert(value) {
     insert_from(root, value);
 }
 
-function index_tree(root) {
-    let i = 0;
-    traverse_inorder(root, (n) => n.index = i++);
-    return i;
-}
-
-function set_tree_parents(node, parent) {
-    if (!node) return;
-    node.parent = parent;
-    set_tree_parents(node.left, node);
-    set_tree_parents(node.right, node);
-}
-
 function preprocess_tree(root) {
-    set_tree_parents(root, null);
-    nodeCount = index_tree(root);
+    // Sets the node count and every nodes index & parent
+    nodeCount = 0;
+    const visit_node = (node, parent) => {
+        if (!node) return;
+        visit_node(node.left, node);
+        node.parent = parent;
+        node.index  = nodeCount++;
+        visit_node(node.right, node);
+    }
+    visit_node(root, null);
 }
 
 function tree_copy(node) {
@@ -113,7 +114,7 @@ function tree_copy(node) {
     }
 
     // Create a new object to hold the copied properties
-    const copiedNode = Array.isArray(node) ? [] : {};
+    const copiedNode = {};
 
     // Iterate through all properties of the original object
     for (let key in node) {
@@ -158,8 +159,20 @@ function check_red_black_tree_conditions() {
         return good(root);
     };
     const rule3 = () => {
-
-
+        const count_black_nodes = (node) => {
+            if (!node) return 1;
+        
+            const left_count  = count_black_nodes(node.left);
+            const right_count = count_black_nodes(node.right);
+            
+            if (left_count === 0
+            || right_count === 0
+            ||  left_count !== right_count
+            ) return 0;
+            
+            return (node.color == BLACK)? left_count + 1 : left_count;
+        }
+        return count_black_nodes(root) !== 0;
     };
 
     document.getElementById("rule-1").style.color = rule1()? "lime":"white";
@@ -167,50 +180,80 @@ function check_red_black_tree_conditions() {
     document.getElementById("rule-3").style.color = rule3()? "lime":"white";
 }
 
-// Draw something on the canvas as an example
-function test_draw(ctx) {
-    // Draw a rectangle
-    ctx.fillStyle = '#FF0000';
-    ctx.fillRect(50, 50, 150, 100);
-
-    // Draw a circle
-    ctx.beginPath();
-    ctx.arc(300, 150, 50, 0, Math.PI * 2, false);
-    ctx.strokeStyle = '#00FF00'
-    ctx.lineWidth = 5;
-    ctx.stroke();
-    ctx.closePath();
-    ctx.fillStyle = distance_sq(mouseX, mouseY, 300, 150) > 50*50? '#0000FF':'#FF0000';
-    ctx.fill();
-
-    // Draw a triangle
-    ctx.beginPath();
-    ctx.moveTo(500, 50);
-    ctx.lineTo(450, 150);
-    ctx.lineTo(550, 150);
-    ctx.closePath();
-    ctx.fillStyle = '#0000FF';
-    ctx.fill();
-
-    // Draw a line
-    ctx.beginPath();
-    ctx.moveTo(100, 300);
-    ctx.lineTo(500, 300);
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 5;
-    ctx.stroke();
-    ctx.closePath();
-}
+let drawData = {
+    reset: function() {
+        this.nodes = [];
+        this.lines = [];
+    },
+    prevHoveredNode:  null,
+    prevSelectedNode: null,
+};
+let redraw;
 
 function draw(ctx) {
+    if (!redraw) return;
+    redraw = false;
+
     // Clear canvas
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    
+    drawData.lines.forEach((l) => {
+        ctx.beginPath();
+        ctx.moveTo(...l.start);
+        ctx.lineTo(...l.end);
+        ctx.strokeStyle = '#FFF';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.closePath();
+    });
+    
+    // Draw Circle for node
+    drawData.nodes.forEach((p) => {
+        // Draw a circle for each node
+        ctx.beginPath();
+        ctx.arc(...p.center, 10, 0, Math.PI * 2, false);
+        ctx.strokeStyle = '#FFF'
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.strokeStyle = '#000'
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.closePath();
+        ctx.fillStyle = p.node.color? '#000' : '#F00';
+        ctx.fill();
+
+        // Draw hovered/selected indicator
+        if (p.node == hoveredNode || p.node == selectedNode) {
+            ctx.beginPath();
+            ctx.arc(...p.center, 20, 0, Math.PI * 2, false);
+            ctx.strokeStyle = p.node == selectedNode? '#FFF':'lime'
+            ctx.lineWidth = 8;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        // Draw value for each node
+        [x,y] = p.center;
+        ctx.lineWidth = 5;
+        ctx.font = "20px monospace";
+        ctx.strokeStyle = '#000'
+        ctx.fillStyle = '#FFF';
+        ctx.textAlign='center';
+        ctx.strokeText(p.node.value, x, y+30);
+        ctx.fillText(p.node.value, x, y+30);
+    });
+    draws += 1;
+    document.getElementById('draw-count').innerText = `Draw Count: ${draws}`
+}
+
+function generate_draw_data() {
+    drawData.reset();
 
     // Setup
     hoveredNode = null;
 
-    const draw_node = (node, depth) => {
+    const visit_node = (node, depth) => {
         const calc_node_x = (node) => {
             return ((node.index + 1) / (nodeCount + 1)) * canvasWidth;
         }
@@ -223,87 +266,75 @@ function draw(ctx) {
             
         // Draw connection to left child
         if (node.left) {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(calc_node_x(node.left), calc_node_y(depth + 1));
-            ctx.strokeStyle = '#FFF';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            ctx.closePath();
-            
-            draw_node(node.left, depth + 1);
+            drawData.lines.push({
+                start: [x,y],
+                end: [calc_node_x(node.left), calc_node_y(depth + 1)],
+            });
+            visit_node(node.left, depth + 1);
         }
 
         // Draw connection to right child
         if (node.right) {
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(calc_node_x(node.right), calc_node_y(depth + 1));
-            ctx.strokeStyle = '#FFF';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-            ctx.closePath();
-            
-            draw_node(node.right, depth + 1);
+            drawData.lines.push({
+                start: [x,y],
+                end: [calc_node_x(node.right), calc_node_y(depth + 1)],
+            });
+            visit_node(node.right, depth + 1);
         }
-
-        // Draw Circle for node
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2, false);
-        ctx.strokeStyle = '#FFF'
-        ctx.lineWidth = 6;
-        ctx.stroke();
-        ctx.strokeStyle = '#000'
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.closePath();
-        ctx.fillStyle = node.color? '#000' : '#F00';
-        ctx.fill();
         
         const hover = distance_sq(mouseX, mouseY, x, y) < 40*40;
         if (hover) hoveredNode = node;
-        if (hover || selectedNode == node) {
-            ctx.beginPath();
-            ctx.arc(x, y, 20, 0, Math.PI * 2, false);
-            ctx.strokeStyle = selectedNode == node? '#FFF':'lime'
-            ctx.lineWidth = 8;
-            ctx.stroke();
-            ctx.closePath();
-        }
         
-        // Draw value for node
-        ctx.lineWidth = 5;
-        ctx.font = "20px monospace";
-        ctx.strokeStyle = '#000'
-        ctx.fillStyle = '#FFF';
-        ctx.textAlign='center';
-        ctx.strokeText(node.value, x, y+30);
-        ctx.fillText(node.value, x, y+30);
+        drawData.nodes.push({
+            center: [x,y],
+            node:   node,
+        });
     };
-    if (root) draw_node(root, 0);
+    if (root) visit_node(root, 0);
 
-    localStorage.setItem('root', JSON.stringify(tree_copy(root)));
-    check_red_black_tree_conditions();
+    if (hoveredNode != drawData.prevHoveredNode) {
+        drawData.prevHoveredNode = hoveredNode;
+        redraw = true;
+    }
+
+    if (selectedNode != drawData.prevSelectedNode) {
+        drawData.prevSelectedNode = selectedNode;
+        redraw = true;
+    }
 }
+
 
 function init() {
     preprocess_tree(root);
-
+    check_red_black_tree_conditions();
+    
+    const container = document.querySelector('.canvas-container');
+    
     // Get the canvas element and its context
     const canvas = document.getElementById('myCanvas');
     const ctx = canvas.getContext("2d", { alpha: false });
+    
+    function debounce(func, timeout = 250) {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => { func.apply(this, args); }, timeout);
+        };
+    }
 
     // Resize canvas to fit its container
     function resizeCanvas() {
         const container = document.querySelector('.canvas-container');
         canvas.width = container.clientWidth;
         canvas.height = container.clientHeight;
-        canvasWidth = canvas.width;
-        canvasHeight = canvas.height;
+        canvasWidth  = container.clientWidth;
+        canvasHeight = container.clientHeight;
+        generate_draw_data();
+        redraw = true;
         draw(ctx);
     }
 
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', debounce(() => resizeCanvas()));
     resizeCanvas();
 
     // Function to handle 'mousemove' event
@@ -312,16 +343,12 @@ function init() {
         const rect = element.getBoundingClientRect(); // Get element's position relative to viewport
         mouseX = event.clientX - rect.left; // Calculate mouse X position relative to element
         mouseY = event.clientY - rect.top; // Calculate mouse Y position relative to element
-
-        // TODO: only redraw if we NEED to
+        generate_draw_data();
         draw(ctx);
     }
-
-    const container = document.querySelector('.canvas-container');
     container.addEventListener('mousemove', handleMouseMove);
 
     function handleClick(event) {
-        // perform an AVL rotation
         if (hoveredNode && selectedNode) {
             if (hoveredNode == selectedNode) {
                 hoveredNode.color = 1 - hoveredNode.color;
@@ -329,33 +356,77 @@ function init() {
             else {
                 avl_rotation(hoveredNode, selectedNode);
                 preprocess_tree(root)
+                generate_draw_data();
             }
+            check_red_black_tree_conditions();
+            save_tree();
             selectedNode = null;
+            redraw = true;
         }
-        else {
+        else if(selectedNode || hoveredNode) {
             selectedNode = hoveredNode;
+            redraw = true;
         }
+        document.getElementById('textInput').focus();
         draw(ctx);
     }
     container.addEventListener('click', handleClick);
+
+    /*
+        const modal = document.getElementById('new-node-value');
+        const overlay = document.getElementById('overlay');
+        if (overlay.style.display == "none") {
+
+        }
+        */
+    container.addEventListener('keydown', function(event) {
+        const modal = document.getElementById('new-node-value');
+        const overlay = document.getElementById('overlay');
+        
+        const isNumber = (c) => { return !isNaN(c) && c !== ' '; }
+        if (event.key === 'Enter') {
+            modal.style.display = "none";
+            overlay.style.display = "none";
+        }
+        if (event.key === 'Backspace') {
+            console.log('Backspace key was pressed!');
+        }
+        else if (isNumber(event.key)) {
+            const style = window.getComputedStyle(overlay);
+            if (style.display === "none") {
+                modal.style.display = "block";
+                overlay.style.display = "flex";
+                modal.innerText = "";
+            }
+            modal.innerText += event.key;
+        }
+    });
 
     const addNodeButton = document.getElementById('add-node');
     function add_node(event) {
         const addNodeInput = document.getElementById('add-node-value');
         insert(addNodeInput.value);
         preprocess_tree(root);
+        generate_draw_data();
+        check_red_black_tree_conditions();
+        save_tree();
+        redraw = true;
         draw(ctx);
     }
-    addNodeButton.addEventListener('click', add_node)
-
+    addNodeButton.addEventListener('click', add_node);
+    
     const clearButton = document.getElementById('clear-tree');
     function clear_tree(event) {
         if (window.confirm("Clear all nodes?")) {
             root = null;
+            check_red_black_tree_conditions();
+            save_tree();
+            drawData.reset();
+            redraw = true;
+            draw(ctx);
         }
-        draw(ctx);
     }
-    clearButton.addEventListener('click', clear_tree)
+    clearButton.addEventListener('click', clear_tree);
 }
 
 window.addEventListener('DOMContentLoaded', init);
