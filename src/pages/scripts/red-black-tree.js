@@ -418,20 +418,8 @@ function init() {
         draw(ctx);
     });
 
-    const addNodeButton = document.getElementById('add-node');
-    addNodeButton.addEventListener('click', () => {
-        const value = parseInt(document.getElementById('add-node-input').value);
-        if (isNaN(value)) return;
-        insert(value);
-        preprocess_tree(root);
-        generate_draw_data();
-        check_red_black_tree_conditions();
-        save_tree();
-        redraw = true;
-        draw(ctx);
-    });
-
     const clearButton = document.getElementById('clear-tree');
+    const helpButton = document.getElementById('help');
 
     document.addEventListener('keydown', (event) => {
         const modal = document.getElementById('new-node-value');
@@ -444,6 +432,7 @@ function init() {
             modal.style.display = "none";
             overlay.style.display = "none";
             clearButton.disabled = false;
+            helpButton.disabled = false;
         };
 
         const isNumber = (c) => { return !isNaN(c) && c !== ' '; };
@@ -457,6 +446,8 @@ function init() {
             save_tree();
             redraw = true;
             draw(ctx);
+
+            document.getElementById('add-node-input').value = "";
         }
         else if (event.key === 'Backspace') {
             if (!visible) return;
@@ -470,6 +461,7 @@ function init() {
                 overlay.style.display = "flex";
                 modal.innerText = "";
                 clearButton.disabled = true;
+                helpButton.disabled = true;
             }
             modal.innerText += event.key;
         }
@@ -486,9 +478,7 @@ function init() {
         }
     });
     
-    document
-    .getElementById('help')
-    .addEventListener('click', (event) => {
+    helpButton.addEventListener('click', (event) => {
         document.getElementById('overlay').style.display = 'flex';
         document.getElementById('how-to').style.display = "block";
     });
