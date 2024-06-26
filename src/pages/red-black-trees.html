@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Red-Black Trees</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'><circle cx='2' cy='2' r='2' fill='red'/><circle cx='4' cy='4' r='2' fill='black'/></svg>" type="image/svg+xml">
 	<link href="styles/red-black-tree.css" rel="stylesheet"></link>
@@ -64,20 +63,54 @@
                 </table>
             <ul>
             </ul>
+            <h3 style="text-decoration: underline;">Insertion Guide:</h3>
+                <ol>
+                    <li>
+                        For every node on insertion path (top to bottom):
+                        <ul>
+                            <li>
+                                If node has two RED children then:
+                            </li>
+                            <ol>
+                                <li>
+                                    color the children BLACK
+                                </li>
+                                <li>
+                                    color the node RED (unless it's the root)
+                                </li>
+                            </ol>
+                        </ul>
+                    </li>
+                    <li>
+                        Fix any (BLACK → RED → RED) paths
+                        <ul>
+                            <li>
+                                If you have a straight 3 nodes (all left children or all right children)
+                            </li>
+                            <ol>
+                                <li>
+                                    Rotate the top RED node with it's parent and
+                                </li>
+                                <li>
+                                    swap their colors
+                                </li>
+                            </ol>
+                            <li>
+                                If you have a kink (one is left child, one is right child)
+                            </li>
+                            <ol>
+                                <li>
+                                    Rotate the two REDs to form a straight
+                                </li>
+                                <li>
+                                    then fix the straight
+                                </li>
+                            </ol>
+                        </ul>
+                    </li>
+                </ol>
+            </summary>
         </div>
-        <summary hidden>
-            For every node on path of insertion (in order from top to bottom):
-                If node has two RED children then:
-                    color the children BLACK
-                    color the node RED (unless it's the root)
-            Fix any (BLACK -> RED -> RED) paths
-            If you have a straight 3 nodes (all left children or all right children)
-                Rotate the top RED node with it's parent and
-                swap their colors
-            If you have a kink (one is left child, one is right child)
-                Rotate the two REDs to form a straight
-                then fix the straight
-        </summary>
     </div>
 </body>
 </html>
