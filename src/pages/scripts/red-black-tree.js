@@ -4,6 +4,7 @@ let mouseY = 0;
 let canvasWidth = 0;
 let canvasHeight = 0;
 let nodeCount = 0;
+let treeHeight = 5;
 
 let hoveredNode = null;
 let selectedNode = null;
@@ -195,7 +196,8 @@ function draw(ctx) {
     // Clear canvas
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    
+
+    // Draw tree connection lines
     drawData.lines.forEach((l) => {
         ctx.beginPath();
         ctx.moveTo(...l.start);
@@ -232,12 +234,12 @@ function draw(ctx) {
         }
 
         // Draw value for each node
-        [x,y] = p.center;
         ctx.lineWidth = 5;
         ctx.font = "20px monospace";
         ctx.strokeStyle = '#000'
         ctx.fillStyle = '#FFF';
         ctx.textAlign='center';
+        [x,y] = p.center;
         ctx.strokeText(p.node.value, x, y+30);
         ctx.fillText(p.node.value, x, y+30);
     });
@@ -250,21 +252,21 @@ function generate_draw_data() {
     hoveredNode = null;
 
     const visit_node = (node, depth) => {
-        const calc_node_x = (node) => {
-            return ((node.index + 1) / (nodeCount + 1)) * canvasWidth;
-        }
-        const calc_node_y = (depth) => {
-            return depth * 100 + 100;
-        }
+        const calc_x = (node) => (
+            ((node.index + 1) / (nodeCount + 1)) * canvasWidth
+        );
+        const calc_y = (depth) => (
+            depth * Math.min(80, (canvasHeight-80)/treeHeight) + 40
+        );
 
-        let x = calc_node_x(node),
-            y = calc_node_y(depth);
+        let x = calc_x(node),
+            y = calc_y(depth);
             
         // Draw connection to left child
         if (node.left) {
             drawData.lines.push({
                 start: [x,y],
-                end: [calc_node_x(node.left), calc_node_y(depth + 1)],
+                end: [calc_x(node.left), calc_y(depth + 1)],
             });
             visit_node(node.left, depth + 1);
         }
@@ -273,7 +275,7 @@ function generate_draw_data() {
         if (node.right) {
             drawData.lines.push({
                 start: [x,y],
-                end: [calc_node_x(node.right), calc_node_y(depth + 1)],
+                end: [calc_x(node.right), calc_y(depth + 1)],
             });
             visit_node(node.right, depth + 1);
         }
@@ -305,8 +307,6 @@ function init() {
     check_red_black_tree_conditions();
     
     const container = document.querySelector('.canvas-container');
-    
-    // Get the canvas element and its context
     const canvas = document.getElementById('myCanvas');
     const ctx = canvas.getContext("2d", { alpha: false });
     
@@ -333,18 +333,16 @@ function init() {
     window.addEventListener('resize', debounce(() => resizeCanvas()));
     resizeCanvas();
 
-    // Function to handle 'mousemove' event
-    function handleMouseMove(event) {
+    container.addEventListener('mousemove', (event) => {
         const element = document.querySelector('.canvas-container');
         const rect = element.getBoundingClientRect(); // Get element's position relative to viewport
         mouseX = event.clientX - rect.left; // Calculate mouse X position relative to element
         mouseY = event.clientY - rect.top; // Calculate mouse Y position relative to element
         generate_draw_data();
         draw(ctx);
-    }
-    container.addEventListener('mousemove', handleMouseMove);
+    });
 
-    function handleClick(event) {
+    container.addEventListener('click', (event) => {
         if (hoveredNode && selectedNode) {
             if (hoveredNode == selectedNode) {
                 hoveredNode.color = 1 - hoveredNode.color;
@@ -365,24 +363,39 @@ function init() {
         }
         document.getElementById('textInput').focus();
         draw(ctx);
-    }
-    container.addEventListener('click', handleClick);
+    });
 
     container.addEventListener('keydown', (event) => {
         const modal = document.getElementById('new-node-value');
         const overlay = document.getElementById('overlay');
         
-        const isNumber = (c) => { return !isNaN(c) && c !== ' '; }
-        if (event.key === 'Enter') {
+        const style = window.getComputedStyle(overlay);
+        const visible = (style.display !== "none");
+
+        const hide = () => {
             modal.style.display = "none";
             overlay.style.display = "none";
+        };
+
+        const isNumber = (c) => { return !isNaN(c) && c !== ' '; };
+        if (event.key === 'Enter') {
+            hide();
+            insert(parseInt(modal.innerText));
+            preprocess_tree(root);
+            generate_draw_data();
+            check_red_black_tree_conditions();
+            save_tree();
+            redraw = true;
+            draw(ctx);
         }
-        if (event.key === 'Backspace') {
-            console.log('Backspace key was pressed!');
+        else if (event.key === 'Backspace') {
+            if (!visible) return;
+            if (modal.innerText.length <= 1) hide();
+            else modal.innerText = modal.innerText.slice(0, -1);
         }
+        else if (event.key === 'Escape') hide();
         else if (isNumber(event.key)) {
-            const style = window.getComputedStyle(overlay);
-            if (style.display === "none") {
+            if (!visible) {
                 modal.style.display = "block";
                 overlay.style.display = "flex";
                 modal.innerText = "";
@@ -390,19 +403,6 @@ function init() {
             modal.innerText += event.key;
         }
     });
-
-    const addNodeButton = document.getElementById('add-node');
-    function add_node(event) {
-        const addNodeInput = document.getElementById('add-node-value');
-        insert(addNodeInput.value);
-        preprocess_tree(root);
-        generate_draw_data();
-        check_red_black_tree_conditions();
-        save_tree();
-        redraw = true;
-        draw(ctx);
-    }
-    addNodeButton.addEventListener('click', add_node);
     
     const clearButton = document.getElementById('clear-tree');
     function clear_tree(event) {

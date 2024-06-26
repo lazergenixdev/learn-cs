@@ -5,13 +5,12 @@ body {
 	height: 100vh;
 	display: grid;
 	grid-template-rows: auto 1fr;
-	background-color: #222;
 	color: white;
 }
 
 .top-bar {
-	background-color: #333;
-	padding: 10px;
+	background-color: #272727;
+	padding: 5px;
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -24,7 +23,7 @@ body {
 	justify-content: center;
 	width: 40px;
 	height: 40px;
-	background-color: #555;
+	background-color: #393939;
 	border-radius: 5px;
 	transition: background-color 0.3s;
 	text-decoration: none;
@@ -35,12 +34,11 @@ body {
 }
 
 button {
-	background-color: #555;
+	background-color: #393939;
 	border-radius: 5px;
 	height: 40px;
 	padding: 0px 20px;
 	transition: background-color 0.3s;
-	text-decoration: none;
 	border: none;
 	color: white;
 	font-size: 18px;
@@ -48,15 +46,6 @@ button {
 
 button:hover {
 	background-color: #777;
-}
-
-input {
-	background-color: #282828;
-	color: white;
-	border: none;
-	font-size: 18px;
-	border-radius: 10px;
-	padding: 8px;
 }
 
 .canvas-container {
