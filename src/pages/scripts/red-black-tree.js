@@ -1,3 +1,4 @@
+import { History } from "./undo-redo.js";
 
 let mouseX = 0;
 let mouseY = 0;
@@ -9,34 +10,24 @@ let treeHeight = 5;
 let hoveredNode = null;
 let selectedNode = null;
 
-// Red: 0, Black: 1
+const RED   = 0;
+const BLACK = 1;
 let root = JSON.parse(localStorage.getItem('root'));
 
 function save_tree() {
-    localStorage.setItem('root', JSON.stringify(tree_copy(root)));
+    const state = JSON.stringify(tree_copy(root));
+    history.push(state);
+    localStorage.setItem('root', state);
 }
 
-const RED   = 0;
-const BLACK = 1;
-
 function create_node(value) {
-    return {value: value, color: (Math.random() < 0.5? 0:1)};
+    return {value: value, color: RED};
 }
 
 function distance_sq(x0, y0, x1, y1) {
     const dx = x1 - x0;
     const dy = y1 - y0;
     return dx * dx + dy * dy;
-}
-
-function traverse_inorder(root, callbackfn) {
-    const inorder = (node, depth) => {
-        if (!node) return;
-        inorder(node.left, depth + 1);
-        callbackfn(node, depth);
-        inorder(node.right, depth + 1);
-    };
-    inorder(root, 0);
 }
 
 function avl_rotation(x, y) {
@@ -239,7 +230,7 @@ function draw(ctx) {
         ctx.strokeStyle = '#000'
         ctx.fillStyle = '#FFF';
         ctx.textAlign='center';
-        [x,y] = p.center;
+        const [x,y] = p.center;
         ctx.strokeText(p.node.value, x, y+30);
         ctx.fillText(p.node.value, x, y+30);
     });
@@ -301,8 +292,21 @@ function generate_draw_data() {
     }
 }
 
+const history = new History((state) => {
+    localStorage.setItem('root', state);
+    const new_root = JSON.parse(state);
+    root = new_root;
+    preprocess_tree(root);
+    generate_draw_data();
+    check_red_black_tree_conditions();
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext("2d", { alpha: false });
+    redraw = true;
+    draw(ctx);
+});
 
 function init() {
+    history.push(JSON.stringify(tree_copy(root)));
     preprocess_tree(root);
     check_red_black_tree_conditions();
     
@@ -361,11 +365,10 @@ function init() {
             selectedNode = hoveredNode;
             redraw = true;
         }
-        document.getElementById('textInput').focus();
         draw(ctx);
     });
 
-    container.addEventListener('keydown', (event) => {
+    document.addEventListener('keydown', (event) => {
         const modal = document.getElementById('new-node-value');
         const overlay = document.getElementById('overlay');
         
@@ -379,6 +382,7 @@ function init() {
 
         const isNumber = (c) => { return !isNaN(c) && c !== ' '; };
         if (event.key === 'Enter') {
+            if (!visible) return;
             hide();
             insert(parseInt(modal.innerText));
             preprocess_tree(root);
@@ -416,6 +420,8 @@ function init() {
         }
     }
     clearButton.addEventListener('click', clear_tree);
+
+    history.setup();
 }
 
 window.addEventListener('DOMContentLoaded', init);

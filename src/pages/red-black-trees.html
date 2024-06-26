@@ -6,7 +6,7 @@
     <title>Red-Black Trees</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'><circle cx='2' cy='2' r='2' fill='red'/><circle cx='4' cy='4' r='2' fill='black'/></svg>" type="image/svg+xml">
 	<link href="styles/red-black-tree.css" rel="stylesheet"></link>
-	<script src="scripts/red-black-tree.js"></script>
+	<script src="scripts/red-black-tree.js" type="module"></script>
 </head>
 <body>
     <div class="top-bar">
@@ -20,7 +20,6 @@
     </div>
     <div class="canvas-container">
 		<canvas id="myCanvas"></canvas>
-        <input id="textInput" type="text"/>
     </div>
 	<ol class="info" id="info">
 		<li id="rule-1">Root is always black.</li>
@@ -28,9 +27,7 @@
 		<li id="rule-3">Every path from root to leaf has the same number of black nodes.</li>
 	</ol>
     <div id="overlay">
-        <div id="new-node-value">
-            HI
-        </div>
+        <div id="new-node-value"></div>
     </div>
 </body>
 </html>
