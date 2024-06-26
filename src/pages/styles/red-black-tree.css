@@ -69,6 +69,7 @@ button:hover {
 }
 
 .info {
+	font-size: 18px;
 	background-color: rgba(0,0,0, 0.3);
 	border-radius: 10px;
 	user-select: none;
@@ -91,19 +92,24 @@ button:hover {
     justify-content: center;
     align-items: center;
 	pointer-events: none;
+	font-size: 40px;
 }
 
 /* Modal window */
 #new-node-value {
 	display: none;
-    font-size: 40px;
 	font-weight: bold;
     background-color: black;
-    color: white;
     padding: 20px;
-    border-radius: 10px;
+    border-radius: 24px;
     text-align: center;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#how-to {
+	display: block;
+	background-color: rgba(0,0,0,0.7);
+	border-radius: 40px;
+	padding: 20px;
 }
 
 /* Hide the spinner buttons in WebKit browsers (Chrome, Safari, etc.) */

@@ -9,6 +9,7 @@ let treeHeight = 5;
 
 let hoveredNode = null;
 let selectedNode = null;
+let lastInsertedValue = undefined;
 
 const RED   = 0;
 const BLACK = 1;
@@ -71,6 +72,7 @@ function insert(value) {
         return;
     }
 
+    lastInsertedValue = value;
     const insert_from = (node, value) => {
         if (value < node.value) {
             if (node.left) return insert_from(node.left, value);
@@ -217,8 +219,8 @@ function draw(ctx) {
 
     // Draw tree connection lines
     drawData.lines.forEach((l) => {
-        ctx.strokeStyle = '#FFF';
-        ctx.fillStyle   = '#FFF';
+        ctx.strokeStyle = lastInsertedValue? l.color : '#FFF';
+        ctx.fillStyle   = lastInsertedValue? l.color : '#FFF';
         draw_arrow(ctx, ...l.start, ...l.end, 10);
     });
     
@@ -265,7 +267,7 @@ function generate_draw_data() {
     // Setup
     hoveredNode = null;
 
-    const visit_node = (node, depth) => {
+    const visit_node = (node, depth, followLastInserted) => {
         const calc_x = (node) => {
             const nx = Math.min(80, canvasWidth / (nodeCount+1));
             const w = nx * (nodeCount+1);
@@ -280,20 +282,24 @@ function generate_draw_data() {
             
         // Draw connection to left child
         if (node.left) {
+            const follow = followLastInserted && lastInsertedValue < node.value;
             drawData.lines.push({
                 start: [x,y],
                 end: [calc_x(node.left), calc_y(depth + 1)],
+                color: follow? '#4F4': '#FFF',
             });
-            visit_node(node.left, depth + 1);
+            visit_node(node.left, depth + 1, follow);
         }
-
+        
         // Draw connection to right child
         if (node.right) {
+            const follow = followLastInserted && lastInsertedValue > node.value;
             drawData.lines.push({
                 start: [x,y],
                 end: [calc_x(node.right), calc_y(depth + 1)],
+                color: follow? '#4F4': '#FFF',
             });
-            visit_node(node.right, depth + 1);
+            visit_node(node.right, depth + 1, follow);
         }
         
         const hover = distance_sq(mouseX, mouseY, x, y) < 40*40;
@@ -304,7 +310,7 @@ function generate_draw_data() {
             node:   node,
         });
     };
-    if (root) visit_node(root, 0);
+    if (root) visit_node(root, 0, true);
 
     if (hoveredNode != drawData.prevHoveredNode) {
         drawData.prevHoveredNode = hoveredNode;
@@ -322,6 +328,7 @@ const history = new History((state) => {
     const new_root = JSON.parse(state);
     root = new_root;
     preprocess_tree(root);
+    lastInsertedValue = undefined;
     generate_draw_data();
     check_red_black_tree_conditions();
     const canvas = document.getElementById('myCanvas');
@@ -372,22 +379,40 @@ function init() {
     });
 
     container.addEventListener('click', (event) => {
+        const overlay = document.getElementById('overlay');
+        const howto   = document.getElementById('how-to');
+        const style   = window.getComputedStyle(howto);
+        if (style.display !== "none") {
+            howto.style.display = "none";
+            overlay.style.display = "none";
+        }
+
         if (hoveredNode && selectedNode) {
+            let updated = false;
             if (hoveredNode == selectedNode) {
                 hoveredNode.color = 1 - hoveredNode.color;
+                updated = true;
             }
-            else {
+            else if (hoveredNode.parent == selectedNode
+            ||      selectedNode.parent == hoveredNode) {
                 avl_rotation(hoveredNode, selectedNode);
                 preprocess_tree(root)
                 generate_draw_data();
+                updated = true;
             }
-            check_red_black_tree_conditions();
-            save_tree();
-            selectedNode = null;
-            redraw = true;
+            if (updated) {
+                check_red_black_tree_conditions();
+                save_tree();
+                selectedNode = null;
+                redraw = true;
+            }
         }
         else if(selectedNode || hoveredNode) {
             selectedNode = hoveredNode;
+            redraw = true;
+        }
+        if (lastInsertedValue !== undefined) {
+            lastInsertedValue = undefined;
             redraw = true;
         }
         draw(ctx);
@@ -433,8 +458,9 @@ function init() {
         }
     });
     
-    const clearButton = document.getElementById('clear-tree');
-    function clear_tree(event) {
+    document
+    .getElementById('clear-tree')
+    .addEventListener('click', (event) => {
         if (window.confirm("Clear all nodes?")) {
             root = null;
             check_red_black_tree_conditions();
@@ -443,8 +469,14 @@ function init() {
             redraw = true;
             draw(ctx);
         }
-    }
-    clearButton.addEventListener('click', clear_tree);
+    });
+    
+    document
+    .getElementById('help')
+    .addEventListener('click', (event) => {
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementById('how-to').style.display = "block";
+    });
 }
 
 window.addEventListener('DOMContentLoaded', init);

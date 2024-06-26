@@ -17,12 +17,14 @@
         </a>
         <button id="help">?</button>
         <button id="clear-tree">Clear</button>
-        <!--
-            <label>
-                <input type="checkbox"/>
-                Balance Factors
-            </label>
-        -->
+        <label hidden>
+            <input type="checkbox"/>
+            Balance Factors
+        </label>
+        <label hidden>
+            <input type="checkbox" checked/>
+            Only insert if valid
+        </label>
     </div>
     <div class="canvas-container">
 		<canvas id="myCanvas"></canvas>
@@ -34,7 +36,47 @@
 	</ol>
     <div id="overlay">
         <div id="new-node-value"></div>
-        <div id="new"></div>
+        <div id="how-to">
+            <h3 style="text-decoration: underline;">Adding a Node:</h3>
+            <table style="border-spacing: 20px 0;">
+                <tr>
+                    <th>0-9</th>
+                    <td>enter a value</td>    
+                </tr>
+                <tr>
+                    <th>Enter</th>
+                    <td>add the node</td>
+                </tr>
+                <tr>
+                    <th>Escape</th>
+                    <td>cancel</td>
+                </tr>
+              </table>
+              <h3 style="text-decoration: underline;">Editing:</h3>
+              <table style="border-spacing: 20px 0;">
+                  <tr>
+                      <td><b>Right Click</b> on 2 nodes to rotate</td>    
+                  </tr>
+                  <tr>
+                      <td><b>Right Click</b> twice on a node to swap colors</td>
+                  </tr>
+                </table>
+            <ul>
+            </ul>
+        </div>
+        <summary hidden>
+            For every node on path of insertion (in order from top to bottom):
+                If node has two RED children then:
+                    color the children BLACK
+                    color the node RED (unless it's the root)
+            Fix any (BLACK -> RED -> RED) paths
+            If you have a straight 3 nodes (all left children or all right children)
+                Rotate the top RED node with it's parent and
+                swap their colors
+            If you have a kink (one is left child, one is right child)
+                Rotate the two REDs to form a straight
+                then fix the straight
+        </summary>
     </div>
 </body>
 </html>
