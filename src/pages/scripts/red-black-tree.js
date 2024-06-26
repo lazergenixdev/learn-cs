@@ -418,6 +418,21 @@ function init() {
         draw(ctx);
     });
 
+    const addNodeButton = document.getElementById('add-node');
+    addNodeButton.addEventListener('click', () => {
+        const value = parseInt(document.getElementById('add-node-input').value);
+        if (isNaN(value)) return;
+        insert(value);
+        preprocess_tree(root);
+        generate_draw_data();
+        check_red_black_tree_conditions();
+        save_tree();
+        redraw = true;
+        draw(ctx);
+    });
+
+    const clearButton = document.getElementById('clear-tree');
+
     document.addEventListener('keydown', (event) => {
         const modal = document.getElementById('new-node-value');
         const overlay = document.getElementById('overlay');
@@ -428,6 +443,7 @@ function init() {
         const hide = () => {
             modal.style.display = "none";
             overlay.style.display = "none";
+            clearButton.disabled = false;
         };
 
         const isNumber = (c) => { return !isNaN(c) && c !== ' '; };
@@ -453,14 +469,13 @@ function init() {
                 modal.style.display = "block";
                 overlay.style.display = "flex";
                 modal.innerText = "";
+                clearButton.disabled = true;
             }
             modal.innerText += event.key;
         }
     });
     
-    document
-    .getElementById('clear-tree')
-    .addEventListener('click', (event) => {
+    clearButton.addEventListener('click', (event) => {
         if (window.confirm("Clear all nodes?")) {
             root = null;
             check_red_black_tree_conditions();

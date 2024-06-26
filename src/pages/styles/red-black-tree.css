@@ -37,7 +37,7 @@ button {
 	background-color: #393939;
 	border-radius: 5px;
 	height: 40px;
-	padding: 0px 20px;
+	padding: 0px 16px;
 	transition: background-color 0.3s;
 	border: none;
 	color: white;
@@ -46,6 +46,18 @@ button {
 
 button:hover {
 	background-color: #777;
+}
+
+input {
+	background-color: #222;
+	border-radius: 5px;
+	height: 40px;
+	transition: background-color 0.3s;
+	border: none;
+	color: white;
+	font-size: 18px;
+	width: 100px;
+	text-align: center;
 }
 
 .canvas-container {
