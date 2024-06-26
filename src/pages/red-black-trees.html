@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Red-Black Trees</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 6'><circle cx='2' cy='2' r='2' fill='red'/><circle cx='4' cy='4' r='2' fill='black'/></svg>" type="image/svg+xml">
 	<link href="styles/red-black-tree.css" rel="stylesheet"></link>
@@ -64,52 +65,51 @@
             <ul>
             </ul>
             <h3 style="text-decoration: underline;">Insertion Guide:</h3>
-                <ol>
-                    <li>
-                        For every node on insertion path (top to bottom):
-                        <ul>
+            <ol>
+                <li>
+                    For every node on insertion path (top to bottom):
+                    <ul>
+                        <li>
+                            If node has two <span class="red">RED</span> children then:
+                        </li>
+                        <ol>
                             <li>
-                                If node has two <span class="red">RED</span> children then:
+                                Color the children <span class="black">BLACK</span>
                             </li>
-                            <ol>
-                                <li>
-                                    Color the children <span class="black">BLACK</span>
-                                </li>
-                                <li>
-                                    Color the node <span class="red">RED</span> (unless it's the root)
-                                </li>
-                            </ol>
-                        </ul>
-                    </li>
-                    <li>
-                        Fix any (<span class="black">BLACK</span> → <span class="red">RED</span> → <span class="red">RED</span>) paths
-                        <ul>
                             <li>
-                                If you have a <span class="straight">straight</span> 3 nodes (all left children or all right children)
+                                Color the node <span class="red">RED</span> (unless it's the root)
                             </li>
-                            <ol>
-                                <li>
-                                    Rotate the top <span class="red">RED</span> node with it's <span class="black">BLACK</span> parent
-                                </li>
-                                <li>
-                                    Swap their colorss
-                                </li>
-                            </ol>
+                        </ol>
+                    </ul>
+                </li>
+                <li>
+                    Fix any (<span class="black">BLACK</span> → <span class="red">RED</span> → <span class="red">RED</span>) paths
+                    <ul>
+                        <li>
+                            If you have a <span class="straight">straight</span> 3 nodes (all left children or all right children)
+                        </li>
+                        <ol>
                             <li>
-                                If you have a <span class="kink">kink</span> (one is left child, one is right child)
+                                Rotate the top <span class="red">RED</span> node with it's <span class="black">BLACK</span> parent
                             </li>
-                            <ol>
-                                <li>
-                                    Rotate the two <span class="red">RED</span>s to form a <span class="straight">straight</span>
-                                </li>
-                                <li>
-                                    Fix the <span class="straight">straight</span>
-                                </li>
-                            </ol>
-                        </ul>
-                    </li>
-                </ol>
-            </summary>
+                            <li>
+                                Swap their colorss
+                            </li>
+                        </ol>
+                        <li>
+                            If you have a <span class="kink">kink</span> (one is left child, one is right child)
+                        </li>
+                        <ol>
+                            <li>
+                                Rotate the two <span class="red">RED</span>s to form a <span class="straight">straight</span>
+                            </li>
+                            <li>
+                                Fix the <span class="straight">straight</span>
+                            </li>
+                        </ol>
+                    </ul>
+                </li>
+            </ol>
         </div>
     </div>
 </body>
