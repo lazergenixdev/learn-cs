@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Input</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background-color: #222;
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px; /* Rounding the corners of the container */
+            background-color: #fff;
+            font-size: 16px; /* Set a base font size for consistency */
+        }
+
+        .tag {
+            display: flex;
+            align-items: center;
+            padding: 5px 6px 5px 10px;
+            margin: 5px;
+            background-color: #3a6a9c;
+            color: white;
+            border-radius: 20px; /* Rounding the corners of the tags */
+            font-size: 16px; /* Ensure tag font size is consistent */
+            position: relative; /* Create a positioning context for the pseudo-element */
+            border: 3px #588cc0 solid;
+        }
+
+        .remove-tag {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: bold; /* Make 'X' bold for better visibility */
+            font-size: 16px; /* Match the size of the 'X' to the tag font size */
+            position: relative; /* Needed for positioning the hover effect */
+            border: none;
+        }
+
+        .remove-tag-circle {
+            position: absolute; /* Position it absolutely within the relative .remove-tag */
+            top: 50%; /* Center it vertically */
+            left: 50%; /* Center it horizontally */
+            transform: translate(-50%, -50%); /* Adjust the centering */
+            width: 24px; /* Diameter of the circle */
+            height: 24px; /* Diameter of the circle */
+            border-radius: 50%; /* Make it a circle */
+            background-color: rgb(255, 70, 70); /* Red color for the circle */
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.3s; /* Smooth transition for the hover effect */
+            mix-blend-mode:color;
+            border: none;
+        }
+        
+        .remove-tag:hover .remove-tag-circle {
+            border: none;
+            opacity: 1; /* Show the circle when hovered */
+        }
+        
+        #tagInput {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 150px;
+            margin: 5px;
+            font-size: 16px; /* Ensure input font size is consistent */
+        }
+        
+        .tag[contenteditable]:empty:before {
+            content: attr(placeholder);
+            color: #ccc;
+            border: none;
+        }
+
+        .remove-tag svg {
+            width: 16px;
+            height: 16px;
+            fill: white; /* Match the SVG icon color to the text color */
+        }
+    </style>
+</head>
+<body>
+    <a href="..">Home</a>
+    <div class="tag-container">
+        <input type="text" id="tagInput" placeholder="Add a word...">
+    </div>
+
+    <p>Failure Links: <span>100</span></p>
+    <p>Dictionary Links: <span>100</span></p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tagInput = document.getElementById('tagInput');
+            const tagContainer = document.querySelector('.tag-container');
+
+            tagInput.addEventListener('keydown', function(event) {
+                if (event.key === ' ' || event.key === 'Enter') {
+                    event.preventDefault(); // Prevent space from being added to the input
+                    const tagText = tagInput.value.trim();
+                    if (tagText) {
+                        addTag(tagText);
+                        tagInput.value = ''; // Clear the input
+                    }
+                }
+            });
+
+            tagInput.addEventListener('paste', function(event) {
+                event.preventDefault();
+                const paste = (event.clipboardData || window.clipboardData).getData('text');
+                const splitPaste = paste.split(' ');
+                splitPaste.forEach(tagText => {
+                    if (tagText.trim()) {
+                        addTag(tagText.trim());
+                    }
+                });
+                tagInput.value = ''; // Clear the input
+            });
+
+            tagContainer.addEventListener('click', function(event) {
+                if (event.target.closest('.remove-tag')) {
+                    event.target.closest('.tag').remove();
+                }
+            });
+
+            function addTag(text) {
+                const tag = document.createElement('span');
+                tag.classList.add('tag');
+                tag.innerHTML = `
+                    ${text}
+                    <span class="remove-tag" contenteditable="false">
+                        <span class="remove-tag-circle"></span>
+                        <svg viewBox="0 0 4 4" stroke="white" stroke-width="0.5px">
+                            <path d="M1 1 3 3 M1 3 3 1"/>
+                        </svg>
+                    </span>
+                `;
+                tagContainer.insertBefore(tag, tagInput);
+            }
+        });
+
+        function getAllTagTexts() {
+            const tags = document.querySelectorAll('.tag');
+            const tagTexts = [];
+
+            tags.forEach(tag => {
+                // Remove the 'X' from the tag text
+                const text = tag.cloneNode(true);
+                const removeTagElement = text.querySelector('.remove-tag');
+                if (removeTagElement) {
+                    text.removeChild(removeTagElement);
+                }
+                tagTexts.push(text.textContent.trim());
+            });
+
+            return tagTexts;
+        }
+    </script>
+</body>
+</html>
