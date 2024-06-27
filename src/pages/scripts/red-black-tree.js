@@ -1,11 +1,12 @@
 import { History } from "./undo-redo.js";
+import { draw_arrow } from "./graphics.js";
 
 let mouseX = 0;
 let mouseY = 0;
 let canvasWidth = 0;
 let canvasHeight = 0;
 let nodeCount = 0;
-let treeHeight = 5;
+let treeHeight = 0;
 
 let hoveredNode = null;
 let selectedNode = null;
@@ -52,14 +53,14 @@ function avl_rotation(x, y) {
         let b = x.right;
         x.right  = y;
         y.left   = b;
-        if (b) b.parent = y;
+        if(b) b.parent = y;
     }
     // Left rotation
     else if (y.right == x) {
         let b = x.left;
         x.left   = y;
         y.right  = b;
-        if (b) b.parent = y;
+        if(b) b.parent = y;
     }
 }
 
@@ -87,16 +88,24 @@ function insert(value) {
 }
 
 function preprocess_tree(root) {
-    // Sets the node count and every nodes index & parent
     nodeCount = 0;
+
+    // Helper function to visit each node and set its properties
     const visit_node = (node, parent) => {
-        if (!node) return;
-        visit_node(node.left, node);
+        if (!node) return 0; // Base case: if the node is null, return height 0
+        
+        const left_height = visit_node(node.left, node);
+
         node.parent = parent;
         node.index  = nodeCount++;
-        visit_node(node.right, node);
+        
+        const right_height = visit_node(node.right, node);
+        
+        // Return the height of the current node's subtree
+        return Math.max(left_height, right_height) + 1;
     }
-    visit_node(root, null);
+
+    treeHeight = visit_node(root, null);
 }
 
 function tree_copy(node) {
@@ -123,53 +132,44 @@ function tree_copy(node) {
 }
 
 function check_red_black_tree_conditions() {
-    if (root === null) {
-        document.getElementById("rule-1").style.color = "lime";
-        document.getElementById("rule-2").style.color = "lime";
-        document.getElementById("rule-3").style.color = "lime";
-        return;
+    const rules = {
+        // Rule 1: The root is always black
+        "rule-1": () => root.color == BLACK,
+
+        // Rule 2: Red nodes can't have red children
+        "rule-2": () => {
+            const validate_node = (node) => {
+                if (!node) return true;
+                
+                if (node.color === RED) {
+                    if (node.left?.color === RED || node.right?.color === RED) {
+                        return false;
+                    }
+                }
+                return validate_node(node.left) && validate_node(node.right);
+            };
+            return validate_node(root);
+        },
+
+        // Rule 3: Every path from the root to leaf has the same number of black nodes
+        "rule-3": () => {
+            const count_black_nodes = (node) => {
+                if (!node) return 1;
+                
+                const left_count  = count_black_nodes(node.left);
+                const right_count = count_black_nodes(node.right);
+                
+                if (left_count === 0 || right_count === 0 || left_count !== right_count) return 0;
+                
+                return (node.color === BLACK)? left_count + 1 : left_count;
+            }
+            return count_black_nodes(root) !== 0;
+        },
+    };
+
+    for (const [id, fn] of Object.entries(rules)) {
+        document.getElementById(id).style.color = (root === null) || fn()? "lime" : "white";
     }
-
-    const rule1 = () => root.color == BLACK;
-    const rule2 = () => {
-        const good = (node) => {
-            if (node.color == BLACK) {
-                if (node.left  && !good(node.left))  return false;
-                if (node.right && !good(node.right)) return false;
-                return true;
-            }
-            if (node.left) {
-                if (node.left.color == RED || !good(node.left))
-                    return false;
-            }
-            if (node.right) {
-                if (node.right.color == RED || !good(node.right))
-                    return false;
-            }
-            return true;
-        }
-        return good(root);
-    };
-    const rule3 = () => {
-        const count_black_nodes = (node) => {
-            if (!node) return 1;
-        
-            const left_count  = count_black_nodes(node.left);
-            const right_count = count_black_nodes(node.right);
-            
-            if (left_count === 0
-            || right_count === 0
-            ||  left_count !== right_count
-            ) return 0;
-            
-            return (node.color == BLACK)? left_count + 1 : left_count;
-        }
-        return count_black_nodes(root) !== 0;
-    };
-
-    document.getElementById("rule-1").style.color = rule1()? "lime":"white";
-    document.getElementById("rule-2").style.color = rule2()? "lime":"white";
-    document.getElementById("rule-3").style.color = rule3()? "lime":"white";
 }
 
 let drawData = {
@@ -182,33 +182,6 @@ let drawData = {
 };
 let redraw;
 
-// https://stackoverflow.com/questions/808826/draw-arrow-on-canvas-tag
-function draw_arrow(ctx, x0, y0, x1, y1, r) {
-    const width = 3;
-    const head_len = 8;
-    const head_angle = Math.PI / 6;
-    const angle = Math.atan2(y1 - y0, x1 - x0);
-  
-    ctx.lineWidth = width;
-  
-    /* Adjust the point */
-    x1 -= (width + r) * Math.cos(angle);
-    y1 -= (width + r) * Math.sin(angle);
-  
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
-  
-    ctx.beginPath();
-    ctx.lineTo(x1, y1);
-    ctx.lineTo(x1 - head_len * Math.cos(angle - head_angle), y1 - head_len * Math.sin(angle - head_angle));
-    ctx.lineTo(x1 - head_len * Math.cos(angle + head_angle), y1 - head_len * Math.sin(angle + head_angle));
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fill();
-  }
-
 function draw(ctx) {
     if (!redraw) return;
     redraw = false;
@@ -218,10 +191,11 @@ function draw(ctx) {
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     // Draw tree connection lines
+    ctx.lineWidth = 3;
     drawData.lines.forEach((l) => {
         ctx.strokeStyle = lastInsertedValue? l.color : '#FFF';
         ctx.fillStyle   = lastInsertedValue? l.color : '#FFF';
-        draw_arrow(ctx, ...l.start, ...l.end, 10);
+        draw_arrow(ctx, ...l.start, ...l.end, 8);
     });
     
     // Draw Circle for node
@@ -229,13 +203,10 @@ function draw(ctx) {
         // Draw a circle for each node
         ctx.beginPath();
         ctx.arc(...p.center, 10, 0, Math.PI * 2, false);
-        ctx.strokeStyle = '#FFF'
-        ctx.lineWidth = 6;
-        ctx.stroke();
-        ctx.strokeStyle = '#000'
-        ctx.lineWidth = 3;
-        ctx.stroke();
         ctx.closePath();
+        ctx.strokeStyle = '#FFF'
+        ctx.lineWidth = 4;
+        ctx.stroke();
         ctx.fillStyle = p.node.color? '#000' : '#F00';
         ctx.fill();
 
@@ -243,17 +214,17 @@ function draw(ctx) {
         if (p.node == hoveredNode || p.node == selectedNode) {
             ctx.beginPath();
             ctx.arc(...p.center, 20, 0, Math.PI * 2, false);
+            ctx.closePath();
             ctx.strokeStyle = p.node == selectedNode? '#FFF':'lime'
             ctx.lineWidth = 8;
             ctx.stroke();
-            ctx.closePath();
         }
 
         // Draw value for each node
         ctx.lineWidth = 5;
-        ctx.font = "20px monospace";
         ctx.strokeStyle = '#000'
         ctx.fillStyle = '#FFF';
+        ctx.font = "20px monospace";
         ctx.textAlign='center';
         const [x,y] = p.center;
         ctx.strokeText(p.node.value, x, y+30);
@@ -378,6 +349,11 @@ function init() {
         draw(ctx);
     });
 
+    const overlay = document.getElementById('overlay');
+    overlay.addEventListener('click', (event) => {
+        overlay.style.display = "none";
+    });
+
     container.addEventListener('click', (event) => {
         const overlay = document.getElementById('overlay');
         const howto   = document.getElementById('how-to');
@@ -439,7 +415,7 @@ function init() {
         if (event.key === 'Enter') {
             if (!visible) return;
             hide();
-            insert(parseInt(modal.innerText));
+            insert(modal.innerText);
             preprocess_tree(root);
             generate_draw_data();
             check_red_black_tree_conditions();
