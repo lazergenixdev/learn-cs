@@ -3,17 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>???</title>
+    <title>title</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍣</text></svg>">  
     <style>
         body {
             font-family: monospace, sans-serif;
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
             background-color: #222;
         }
         .button-container {
@@ -23,61 +19,15 @@
             gap: 10px;
             padding: 20px;
         }
-        .button {
-            width: 300px;
-            height: 200px;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            text-decoration: none;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .button:hover {
-            transform: translateY(-5px);
-			border: 2px solid;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-        }
-        .button .overlay {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-        }
-        .button .title {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .button .description {
-            font-size: 16px;
-        }
     </style>
+    <script src="scripts/components/PageLink.js" type="module"></script>
 </head>
 <body>
     <div class="button-container">
-        <a href="pages/red-black-trees.html" class="button" style="background-image: url('images/preview1.png');">
-            <div class="overlay">
-                <div class="title">Red-Black Trees</div>
-            </div>
-        </a>
-		<a href="page2.html" class="button" style="background-image: url('preview2.jpg');">
-			<div class="overlay">
-				<div class="title">Page 2</div>
-				<div class="description">Description for Page 2</div>
-			</div>
-		</a>
-		<a href="page3.html" class="button" style="background-image: url('preview3.jpg');">
-			<div class="overlay">
-				<div class="title">Page 3</div>
-				<div class="description">Description for Page 3</div>
-			</div>
-		</a>
+        <page-link href="pages/red-black-trees.html" title="Red-Black Trees" src="images/preview1.png"></page-link>
+        <page-link href="pages/dijkstra.html" title="Dijkstra's Algorithm" src="images/images.png"></page-link>
+        <page-link href="pages/aho-corasick.html" title="Aho-Corasick" src="images/images.png"></page-link>
+        <page-link href="." title="Coming Soon!" src="images/sc.png">What could it be!?!</page-link>
     </div>
 </body>
 </html>
