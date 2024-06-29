@@ -1,17 +1,43 @@
+/**
+ * Represents a graph data structure.
+ */
 export class Graph {
+    /**
+     * Initializes a new instance of the Graph class.
+     */
     constructor() {
+        /**
+         * Array to store nodes of the graph.
+         * @type {Array<string>}
+         */
         this.nodes = [];
+
+        /**
+         * Array to store edges of the graph.
+         * @type {Array<Array<string|number>>}
+         */
         this.edges = [];
     }
 
+    /**
+     * Adds a new node to the graph.
+     * @param {string} name - The name of the node to add.
+     * @returns {boolean} True if the node was successfully added, false if it already exists.
+     */
     addNode(name) {
-        if (!this.nodes.includes(name)) {
-            this.nodes.push(name);
-        } else {
+        if (this.nodes.includes(name)) {
             console.log(`Node ${name} already exists.`);
+            return false;
         }
+        
+        this.nodes.push(name);
+        return true;
     }
 
+    /**
+     * Removes a node from the graph.
+     * @param {string} node - The node to remove.
+     */
     removeNode(node) {
         const nodeIndex = this.nodes.indexOf(node);
         if (nodeIndex !== -1) {
@@ -24,22 +50,35 @@ export class Graph {
         }
     }
 
+    /**
+     * Adds an edge between two nodes with an optional weight.
+     * @param {string} nameA - The name of the first node.
+     * @param {string} nameB - The name of the second node.
+     * @param {number} [weight] - The weight of the edge (optional).
+     * @returns {boolean} True if the edge was successfully added, false if it already exists or nodes don't exist.
+     */
     addEdge(nameA, nameB, weight) {
         if (!this.nodes.includes(nameA) || !this.nodes.includes(nameB)) {
             console.log(`One or both nodes ${nameA} and ${nameB} do not exist.`);
-            return;
+            return false;
         }
 
         for (let edge of this.edges) {
             if ((edge[0] === nameA && edge[1] === nameB) || (edge[0] === nameB && edge[1] === nameA)) {
                 console.log(`Edge between ${nameA} and ${nameB} already exists.`);
-                return;
+                return false;
             }
         }
 
         this.edges.push([nameA, nameB, weight]);
+        return true;
     }
 
+    /**
+     * Removes an edge between two nodes.
+     * @param {string} nameA - The name of the first node.
+     * @param {string} nameB - The name of the second node.
+     */
     removeEdge(nameA, nameB) {
         const edgeIndex = this.edges.findIndex(edge => 
             (edge[0] === nameA && edge[1] === nameB) || (edge[0] === nameB && edge[1] === nameA)
@@ -52,10 +91,17 @@ export class Graph {
         }
     }
 
+    /**
+     * Returns a JSON string representation of the graph.
+     * @returns {string} JSON string representing the graph.
+     */
     stringify() {
         return JSON.stringify(this);
     }
 
+    /**
+     * Test function to populate the graph with nodes and edges.
+     */
     test() {
         // Add nodes
         this.addNode('A');

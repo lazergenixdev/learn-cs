@@ -46,7 +46,45 @@ graphView.setCallback('addnode', (x,y,add_node)=>{
     };
 });
 
+graphView.setCallback('addedge', (x,y,add_edge)=>{
+    const addEdgeDialog = document.getElementById('add-edge-dialog');
+    cancel = () => { addEdgeDialog.style.display = "none"; };
+    overlay.style.display = "inherit";
+
+    const rect = graphView.getBoundingClientRect();
+    // TODO: This can be offscreen, fix pls
+    addEdgeDialog.style.left = `${x + rect.left}px`;
+    addEdgeDialog.style.top  = `${y + rect.top}px`;
+    addEdgeDialog.style.display = "flex";
+
+    const input = addEdgeDialog.querySelector('input');
+    const add = () => {
+        const value = parseFloat(input.value);
+        if (isNaN(value)) return;
+        add_edge(value);
+    };
+    input.value = "";
+    input.onkeydown = event => {
+        switch (event.key) {
+            case 'Enter':
+                add();
+            case 'Escape':
+                removeOverlay();    
+                break;
+            default:
+        }
+    };
+    input.focus();
+
+    const button = addEdgeDialog.querySelector('button');
+    button.onclick = () => {
+        add();
+        removeOverlay();
+    };
+});
+
 const stiffToggle = document.getElementById('stiff');
+stiffToggle.checked = true;
 stiffToggle.addEventListener('change', () => {
     if (stiffToggle.checked) {
         graphView.lockEdges();

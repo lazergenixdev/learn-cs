@@ -26,6 +26,7 @@ class Physics {
         this.nodes = {};
         this.edges = [];
         this.nodeRadius = 20;
+        this.stiffness = STIFF_MAX;
 
         const Bodies = Matter.Bodies;
         const Constraint = Matter.Constraint;
@@ -53,14 +54,12 @@ class Physics {
         
         // Create edges (constraints)
         graph.edges.forEach(edge => {
-            this.edges.push(
-                Constraint.create({
-                    bodyA: this.nodes[edge[0]], 
-                    bodyB: this.nodes[edge[1]], 
-                    stiffness: STIFF_MAX,
-                    length: 150
-                })
+            const e = this.create_edge(
+                this.nodes[edge[0]],
+                this.nodes[edge[1]],
+                150
             );
+            this.edges.push(e);
         });
         Matter.World.add(this.world, this.edges);
 
@@ -93,8 +92,37 @@ class Physics {
         });
     }
 
+    create_edge(nodeA, nodeB, length) {
+        const edge = Matter.Constraint.create({
+            bodyA: nodeA, 
+            bodyB: nodeB, 
+            stiffness: this.stiffness,
+            length: length
+        });
+        edge.stiffness = this.stiffness; // modules, lol
+        return edge;
+    }
+
+    set_stiffness(value, reset = false) {
+        this.stiffness = value;
+
+        function nodeDistance(nodeA, nodeB) {
+            return Math.sqrt(distance_sq(
+                nodeA.position.x,
+                nodeA.position.y,
+                nodeB.position.x,
+                nodeB.position.y,
+            ));
+        }
+
+        this.edges.forEach(edge => {
+            if (reset) edge.length = nodeDistance(edge.bodyA, edge.bodyB);
+            edge.stiffness = this.stiffness;
+        });
+    }
+
     add_node(name, x, y, graph) {
-        if (this.nodes[name]) {
+        if (!graph.addNode(name)) {
             console.warn(`Already have a node called "${name}"`);
             return;
         }
@@ -105,8 +133,21 @@ class Physics {
         this.nodes[name] = node;
         Matter.World.add(this.world, node);
     }
+
+    add_edge(weight, nodeA, nodeB, graph) {
+        if (!graph.addEdge(nodeA.label, nodeB.label, weight)) {
+            console.warn(`Already have a edge that connects "${nodeA.label}" and "${nodeB.label}"`);
+            return;
+        }
+
+        console.log(`EDGE ADDED ${[weight, nodeA.label, nodeB.label]}`);
+
+        const edge = this.create_edge(nodeA, nodeB, 150);
+        this.edges.push(edge);
+        Matter.World.add(this.world, edge);
+    }
     
-    maxDistanceSq() { return this.nodeRadius * this.nodeRadius * 2.0; }
+    maxDistanceSq() { return this.nodeRadius * this.nodeRadius * 4.0; }
 
     find_closest_node(x, y, maxDistanceSq = this.maxDistanceSq()) {
         let minDistanceSq = 1e999;
@@ -189,6 +230,22 @@ class GraphView extends HTMLElement {
                     const add_node = name => { this.physics.add_node(name, ...pos, this.graph); };
                     this.callbacks.onaddnode(...pos, add_node);
                     break;
+                case MODE_EDGE_ADD:
+                    if (this.selectedNode) {
+                        const nodeB = this.physics.find_closest_node(...pos);
+                        const nodeA = this.selectedNode;
+                        if (!nodeB) {
+                            this.selectedNode = null;
+                            break;
+                        }
+                        const add_edge = weight => { this.physics.add_edge(weight, nodeA, nodeB, this.graph); };
+                        this.callbacks.onaddedge(...pos, add_edge);
+                        this.selectedNode = null;
+                    }
+                    else {
+                        this.selectedNode = this.physics.find_closest_node(...pos);
+                    }
+                    break;
                 case MODE_NODE_REMOVE:
                     this.physics.remove_node(...pos, this.graph);
                     break;
@@ -226,6 +283,9 @@ class GraphView extends HTMLElement {
     }
 
     render() {
+        if (this.selectedNode && this.mode !== MODE_EDGE_ADD)
+            this.selectedNode = null;
+
         const canvas = this.shadowRoot.querySelector('canvas');
         const ctx = canvas.getContext('2d');
 
@@ -269,10 +329,18 @@ class GraphView extends HTMLElement {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
-        let removedNode = null;
+        let color_node = node => 'blue';
+
+        let specialNode = null;
         if (this.mode === MODE_NODE_REMOVE) {
             const mousePosition = this.physics.mouseConstraint.constraint.pointA;
-            removedNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
+            specialNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
+            color_node = node => (specialNode?.label === node.label)? 'red' : 'blue';
+        }
+        else if (this.mode === MODE_EDGE_ADD) {
+            const mousePosition = this.physics.mouseConstraint.constraint.pointA;
+            specialNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
+            color_node = node => (specialNode?.label === node.label)? 'lime' : 'blue';
         }
 
         // Render nodes
@@ -280,37 +348,32 @@ class GraphView extends HTMLElement {
             ctx.beginPath();
             ctx.arc(node.position.x, node.position.y, this.physics.nodeRadius, 0, 2 * Math.PI);
             ctx.closePath();
-            ctx.fillStyle = (removedNode?.label === node.label)? 'red' : 'blue';
+            ctx.fillStyle = color_node(node);
             ctx.fill();
             ctx.fillStyle = 'white';
             ctx.stroke();
             ctx.font = "24px sans-serif";
             ctx.fillText(name, node.position.x, node.position.y);
+
+            if (this.selectedNode?.label === node.label) {
+                ctx.beginPath();
+                ctx.arc(node.position.x, node.position.y, this.physics.nodeRadius + 10, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.lineWidth = 6;
+                ctx.stroke();
+                ctx.lineWidth = 3;
+            }
         }
 
         requestAnimationFrame(this.render.bind(this));
     }
 
     lockEdges() {
-        function nodeDistance(nodeA, nodeB) {
-            return Math.sqrt(distance_sq(
-                nodeA.position.x,
-                nodeA.position.y,
-                nodeB.position.x,
-                nodeB.position.y,
-            ));
-        }
-
-        this.physics.edges.forEach(edge => {
-            edge.length = nodeDistance(edge.bodyA, edge.bodyB);
-            edge.stiffness = 0.1;
-        });
+        this.physics.set_stiffness(STIFF_MAX, true);
     }
 
     unlockEdges() {
-        this.physics.edges.forEach(edge => {
-            edge.stiffness = 0.0;
-        });
+        this.physics.set_stiffness(STIFF_MIN);
     }
 }
 

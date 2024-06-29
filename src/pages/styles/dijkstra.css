@@ -1,3 +1,5 @@
+@import url("hide-number-spinners.css");
+
 body {
 	font-family: sans-serif;
 	margin: 0;
@@ -80,7 +82,7 @@ select#mode {
 	height: 100%;
 }
 
-#add-node-dialog {
+.dialog {
 	display: none;
 	position: absolute;
 	background-color: black;
@@ -91,7 +93,7 @@ select#mode {
 	width: 120px;
 }
 
-#add-node-dialog > input {
+.dialog > input {
 	box-sizing: border-box;
 	width: 100%;
 }
