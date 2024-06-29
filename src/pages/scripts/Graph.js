@@ -20,6 +20,20 @@ export class Graph {
     }
 
     /**
+     * Checks if the graph is empty.
+     *
+     * @returns {boolean} - Returns true if the graph has no nodes and no edges, otherwise false.
+     */
+    isEmpty() {
+        return this.nodes.length === 0 && this.edges.length === 0;
+    }
+
+    clear() {
+        this.nodes = [];
+        this.edges = [];
+    }
+    
+    /**
      * Adds a new node to the graph.
      * @param {string} name - The name of the node to add.
      * @returns {boolean} True if the node was successfully added, false if it already exists.
@@ -97,6 +111,21 @@ export class Graph {
      */
     stringify() {
         return JSON.stringify(this);
+    }
+
+    /**
+     * Parses a JSON string and returns a new Graph instance.
+     *
+     * @param {string} jsonString - The JSON string representation of a Graph.
+     * @returns {Graph} - A new Graph instance populated with nodes and edges from the JSON string.
+     * @throws {SyntaxError} - Throws an error if the JSON string is not valid.
+     */
+    static parse(jsonString) {
+		const parsed = JSON.parse(jsonString);
+		const graph = new Graph();
+		graph.nodes = parsed?.nodes || [];
+		graph.edges = parsed?.edges || [];
+		return graph;
     }
 
     /**

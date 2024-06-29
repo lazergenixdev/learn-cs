@@ -98,6 +98,11 @@ const setMode = () => graphView.mode = parseInt(mode.value);
 setMode();
 mode.addEventListener('change', setMode);
 
+document.getElementById('clear').addEventListener('click', () => {
+    if (!window.confirm("Clear graph?")) return;
+    graphView.clear();
+});
+
 // Shortcuts
 document.addEventListener('keydown', event => {
     if (window.getComputedStyle(overlay).display !== "none")

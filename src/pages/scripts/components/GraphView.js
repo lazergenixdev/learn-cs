@@ -31,17 +31,20 @@ const STIFF_MAX = 0.1;
 const STIFF_MIN = 0.0;
 
 class Physics {
-    constructor(canvas, graph) {
+    constructor(canvas, graph, saveCallback) {
         this.nodes = {};
         this.edges = [];
         this.nodeRadius = 20;
         this.stiffness = STIFF_MAX;
+        this.save = saveCallback;
 
         const Bodies = Matter.Bodies;
         const Constraint = Matter.Constraint;
         this.engine = Matter.Engine.create();
         this.world = this.engine.world;
         this.runner = Matter.Runner.create();
+
+        const meta = this.load_saved_data();
 
         // Create boundary walls
         const wallThickness = 500;
@@ -55,8 +58,14 @@ class Physics {
         
         // Create nodes
         graph.nodes.forEach(name => {
-            const x = Math.random() * 100.0 + 10.0;
-            const y = Math.random() * 100.0 + 10.0;
+            let x,y;
+            if (meta !== null && meta[name]) {
+                [x, y] = meta[name];
+            }
+            else {
+                x = Math.random() * 100.0 + 10.0;
+                y = Math.random() * 100.0 + 10.0;
+            }
             this.nodes[name] = this.create_node(name, x, y);
             Matter.World.add(this.world, this.nodes[name]);
         });
@@ -91,6 +100,8 @@ class Physics {
         
         // Run the engine
         Matter.Runner.run(this.runner, this.engine);
+
+        // TODO: Save whenever dragging is finished (with stiffness = 0)
     }
 
     create_node(name, x, y) {
@@ -133,6 +144,7 @@ class Physics {
         const node = this.create_node(name, x, y);
         this.nodes[name] = node;
         Matter.World.add(this.world, node);
+        this.save();
     }
 
     add_edge(weight, nodeA, nodeB, graph) {
@@ -146,6 +158,7 @@ class Physics {
         const edge = this.create_edge(nodeA, nodeB, weight);
         this.edges.push(edge);
         Matter.World.add(this.world, edge);
+        this.save();
     }
     
     maxDistanceSq() { return this.nodeRadius * this.nodeRadius * 4.0; }
@@ -180,30 +193,63 @@ class Physics {
 
     remove_node(x, y, graph) {
         const node = this.find_closest_node(x, y);
-        if (node !== null) {
-            const name = node.label;
-            graph.removeNode(name);
+        if (node === null) return;
 
-            this.edges = this.edges.filter(edge => {
-                const keep = edge.bodyA.label !== name && edge.bodyB.label !== name;
-                if (!keep) Matter.World.remove(this.world, edge);
-                return keep;
-            });
-            
-            console.log(`Node removed: ${[name]}`);
-            Matter.World.remove(this.world, node);
-            delete this.nodes[name];
-        }
+        const name = node.label;
+        graph.removeNode(name);
+
+        this.edges = this.edges.filter(edge => {
+            const keep = edge.bodyA.label !== name && edge.bodyB.label !== name;
+            if (!keep) Matter.World.remove(this.world, edge);
+            return keep;
+        });
+        
+        console.log(`Node removed: ${[name]}`);
+        Matter.World.remove(this.world, node);
+        delete this.nodes[name];
+        this.save();
     }
 
     remove_edge(x, y, graph) {
         const edge = this.find_closest_edge(x, y);
-        if (edge !== null) {
-            console.log(`Edge removed: ${[edge.bodyA.label, edge.bodyB.label, edge.weight]}`);
-            graph.removeEdge(edge.bodyA.label, edge.bodyB.label);
-            this.edges = this.edges.filter(e => e !== edge);
+        if (edge === null) return;
+        
+        console.log(`Edge removed: ${[edge.bodyA.label, edge.bodyB.label, edge.weight]}`);
+        graph.removeEdge(edge.bodyA.label, edge.bodyB.label);
+        this.edges = this.edges.filter(e => e !== edge);
+        Matter.World.remove(this.world, edge);
+        this.save();
+    }
+    
+    clear() {
+        for (const node of Object.values(this.nodes)) {
+            Matter.World.remove(this.world, node);
+        }
+        for (const edge of this.edges) {
             Matter.World.remove(this.world, edge);
         }
+        this.nodes = {};
+        this.edges = [];
+    }
+
+    stringify() {
+        const meta = {};
+        for (const [name, node] of Object.entries(this.nodes)) {
+            const x = Math.round(node.position.x);
+            const y = Math.round(node.position.y);
+            meta[name] = `${x},${y}`;
+        }
+        return JSON.stringify(meta);
+    }
+
+    load_saved_data() {
+        const raw = JSON.parse(localStorage.getItem('meta')) || {};
+        if (Object.keys(raw).length === 0) return null;
+
+        for (const [name, str] of Object.entries(raw)) {
+            raw[name] = str.split(',').map(x => parseInt(x));
+        }
+        return raw;
     }
 }
 
@@ -261,13 +307,20 @@ class GraphView extends HTMLElement {
             }
         });
 
-        this.graph = new Graph();
-        this.graph.test(); // TODO: REMOVE ME
+        {
+            let g = localStorage.getItem('graph');
+            if (g === null) {
+                g = '{"nodes":["A","B","C"],"edges":[["A","C",3],["C","B",4],["B","A",7]]}';
+                localStorage.setItem('graph', g);
+                localStorage.setItem('meta', '{"A":"100,66","B":"241,121","C":"108,188"}');
+            }
+            this.graph = Graph.parse(g);
+        }
 
         const script = document.createElement('script');
         script.src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.17.1/matter.min.js";
         script.onload = () => {
-            this.physics = new Physics(canvas, this.graph);
+            this.physics = new Physics(canvas, this.graph, () => this.save());
         };
 
         this.shadowRoot.append(script, canvas);
@@ -301,11 +354,6 @@ class GraphView extends HTMLElement {
         if (!this.physics) {
             requestAnimationFrame(this.render.bind(this));
             return;
-        }
-
-        if (this.shadowRoot.x) {
-            ctx.fillStyle = 'blue';
-            ctx.fillRect(this.shadowRoot.x++, 0, 100, 100);
         }
 
         let removedEdge = null;
@@ -392,8 +440,21 @@ class GraphView extends HTMLElement {
         requestAnimationFrame(this.render.bind(this));
     }
 
+    clear() {
+        this.physics.clear();
+        this.graph.clear();
+        this.save();
+    }
+
+    save() {
+        localStorage.setItem('graph', this.graph.stringify());
+        localStorage.setItem('meta', this.physics.stringify());
+        console.log("Saved!");
+    }
+
     lockEdges() {
         this.physics.set_stiffness(STIFF_MAX, true);
+        this.save();
     }
 
     unlockEdges() {

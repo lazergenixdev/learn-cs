@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Graph Builder</title>
     <link rel="icon" href="../images/three_circles2.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles/dijkstra.css">
+    <link rel="stylesheet" href="styles/graph-algorithms.css">
     <script src="scripts/components/GraphView.js" type="module"></script>
-    <script src="scripts/dijkstra.js" type="module"></script>
+    <script src="scripts/graph-algorithms.js" type="module"></script>
 </head>
 <body>
     <div class="top-bar">
@@ -19,12 +19,13 @@
         <button id="help">?</button>
         <input id="stiff" type="checkbox" checked>
         <select id="mode">
-            <option value="0">Move Nodes</option>
-            <option value="1" selected>Add Node</option>
+            <option value="0" selected>Move Nodes</option>
+            <option value="1">Add Node</option>
             <option value="2">Add Edge</option>
             <option value="3">Remove Node</option>
             <option value="4">Remove Edge</option>
         </select>
+        <button id="clear">Clear</button>
     </div>
     <div id="overlay"></div>
     <div id="add-node-dialog" class="dialog">
