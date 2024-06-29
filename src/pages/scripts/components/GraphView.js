@@ -199,7 +199,7 @@ class Physics {
     remove_edge(x, y, graph) {
         const edge = this.find_closest_edge(x, y);
         if (edge !== null) {
-            console.log(`Edge removed: ${[edge.bodyA.label, edge.bodyA.label, edge.weight]}`);
+            console.log(`Edge removed: ${[edge.bodyA.label, edge.bodyB.label, edge.weight]}`);
             graph.removeEdge(edge.bodyA.label, edge.bodyB.label);
             this.edges = this.edges.filter(e => e !== edge);
             Matter.World.remove(this.world, edge);
@@ -342,29 +342,14 @@ class GraphView extends HTMLElement {
             const w = `${edge.weight}`;
             const [x,y] = mix(edge.bodyA, edge.bodyB);
 
-            function radius(text) {
-                const metrics = ctx.measureText(text);
-                const textWidth = metrics.width;
-                const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-                return Math.max(textWidth, textHeight) * 0.5;
-            }
-            
-            ctx.beginPath();
-            ctx.arc(x, y, radius(w)*1.5, 0, 2 * Math.PI);
-            ctx.closePath();
-            ctx.fillStyle = backgroundColor;
-            ctx.fill();
-            
+            ctx.strokeStyle = backgroundColor;
+            ctx.lineWidth = 10; 
+            ctx.strokeText(w, x, y);
             ctx.fillStyle = (removedEdge === edge)? 'red' : 'white';
             ctx.fillText(w, x, y);
         });
         
-        ctx.strokeStyle = 'white';
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-
         let color_node = node => 'blue';
-
         let specialNode = null;
         if (this.mode === MODE_NODE_REMOVE) {
             const mousePosition = this.physics.mouseConstraint.constraint.pointA;
@@ -376,8 +361,12 @@ class GraphView extends HTMLElement {
             specialNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
             color_node = node => (specialNode?.label === node.label)? 'lime' : 'blue';
         }
-
+        
         // Render nodes
+        ctx.strokeStyle = 'white';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineWidth = 3;
         for (const [name, node] of Object.entries(this.physics.nodes)) {
             ctx.beginPath();
             ctx.arc(node.position.x, node.position.y, this.physics.nodeRadius, 0, 2 * Math.PI);
