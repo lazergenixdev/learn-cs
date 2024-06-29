@@ -18,6 +18,15 @@ function distance_line_sq(ax, ay, bx, by, px, py) {
     return dx*dx + dy*dy;
 }
 
+function node_distance(nodeA, nodeB) {
+    return Math.sqrt(distance_sq(
+        nodeA.position.x,
+        nodeA.position.y,
+        nodeB.position.x,
+        nodeB.position.y,
+    ));
+}
+
 const STIFF_MAX = 0.1;
 const STIFF_MIN = 0.0;
 
@@ -57,7 +66,7 @@ class Physics {
             const e = this.create_edge(
                 this.nodes[edge[0]],
                 this.nodes[edge[1]],
-                150
+                edge[2]
             );
             this.edges.push(e);
         });
@@ -92,13 +101,14 @@ class Physics {
         });
     }
 
-    create_edge(nodeA, nodeB, length) {
+    create_edge(nodeA, nodeB, weight) {
         const edge = Matter.Constraint.create({
             bodyA: nodeA, 
             bodyB: nodeB, 
             stiffness: this.stiffness,
-            length: length
+            length: node_distance(nodeA, nodeB),
         });
+        edge.weight = weight;
         edge.stiffness = this.stiffness; // modules, lol
         return edge;
     }
@@ -106,17 +116,8 @@ class Physics {
     set_stiffness(value, reset = false) {
         this.stiffness = value;
 
-        function nodeDistance(nodeA, nodeB) {
-            return Math.sqrt(distance_sq(
-                nodeA.position.x,
-                nodeA.position.y,
-                nodeB.position.x,
-                nodeB.position.y,
-            ));
-        }
-
         this.edges.forEach(edge => {
-            if (reset) edge.length = nodeDistance(edge.bodyA, edge.bodyB);
+            if (reset) edge.length = node_distance(edge.bodyA, edge.bodyB);
             edge.stiffness = this.stiffness;
         });
     }
@@ -127,7 +128,7 @@ class Physics {
             return;
         }
 
-        console.log(`NODE ADDED: ${[name, x, y]}`);
+        console.log(`Node added: ${[name]}`);
         
         const node = this.create_node(name, x, y);
         this.nodes[name] = node;
@@ -140,9 +141,9 @@ class Physics {
             return;
         }
 
-        console.log(`EDGE ADDED ${[weight, nodeA.label, nodeB.label]}`);
+        console.log(`Edge added: ${[nodeA.label, nodeB.label, weight]}`);
 
-        const edge = this.create_edge(nodeA, nodeB, 150);
+        const edge = this.create_edge(nodeA, nodeB, weight);
         this.edges.push(edge);
         Matter.World.add(this.world, edge);
     }
@@ -188,7 +189,8 @@ class Physics {
                 if (!keep) Matter.World.remove(this.world, edge);
                 return keep;
             });
-
+            
+            console.log(`Node removed: ${[name]}`);
             Matter.World.remove(this.world, node);
             delete this.nodes[name];
         }
@@ -197,6 +199,7 @@ class Physics {
     remove_edge(x, y, graph) {
         const edge = this.find_closest_edge(x, y);
         if (edge !== null) {
+            console.log(`Edge removed: ${[edge.bodyA.label, edge.bodyA.label, edge.weight]}`);
             graph.removeEdge(edge.bodyA.label, edge.bodyB.label);
             this.edges = this.edges.filter(e => e !== edge);
             Matter.World.remove(this.world, edge);
@@ -217,6 +220,8 @@ class GraphView extends HTMLElement {
         this.attachShadow({ mode: 'open' });
         this.mode = MODE_NORMAL;
         this.callbacks = {};
+        this.minVelocity = 1.0;
+        this.freezeRender = false;
 
         const canvas = document.createElement('canvas');
         canvas.width = this.clientWidth;
@@ -286,10 +291,11 @@ class GraphView extends HTMLElement {
         if (this.selectedNode && this.mode !== MODE_EDGE_ADD)
             this.selectedNode = null;
 
+        const backgroundColor = '#1a1a1a';
         const canvas = this.shadowRoot.querySelector('canvas');
         const ctx = canvas.getContext('2d');
 
-        ctx.fillStyle = '#1a1a1a'
+        ctx.fillStyle = backgroundColor
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         if (!this.physics) {
@@ -307,11 +313,19 @@ class GraphView extends HTMLElement {
             const mousePosition = this.physics.mouseConstraint.constraint.pointA;
             removedEdge = this.physics.find_closest_edge(mousePosition.x, mousePosition.y);
         }
+        
+        const mix = (a,b) => {
+            a = a.position, b = b.position;
+            const x = a.x + b.x;
+            const y = a.y + b.y;
+            return [x/2, y/2];
+        };
 
         // Render edges
         ctx.strokeStyle = 'white';
         ctx.fillStyle = 'white';
         ctx.lineWidth = 3;
+        ctx.font = "24px sans-serif";
         this.physics.edges.forEach(edge => {
             const style = (removedEdge === edge)? 'red' : 'white';
             ctx.strokeStyle = style;
@@ -323,6 +337,26 @@ class GraphView extends HTMLElement {
                 this.physics.nodeRadius,
                 12,
             );
+        });
+        this.physics.edges.forEach(edge => {
+            const w = `${edge.weight}`;
+            const [x,y] = mix(edge.bodyA, edge.bodyB);
+
+            function radius(text) {
+                const metrics = ctx.measureText(text);
+                const textWidth = metrics.width;
+                const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+                return Math.max(textWidth, textHeight) * 0.5;
+            }
+            
+            ctx.beginPath();
+            ctx.arc(x, y, radius(w)*1.5, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.fillStyle = backgroundColor;
+            ctx.fill();
+            
+            ctx.fillStyle = (removedEdge === edge)? 'red' : 'white';
+            ctx.fillText(w, x, y);
         });
         
         ctx.strokeStyle = 'white';
@@ -352,7 +386,6 @@ class GraphView extends HTMLElement {
             ctx.fill();
             ctx.fillStyle = 'white';
             ctx.stroke();
-            ctx.font = "24px sans-serif";
             ctx.fillText(name, node.position.x, node.position.y);
 
             if (this.selectedNode?.label === node.label) {
@@ -365,6 +398,8 @@ class GraphView extends HTMLElement {
             }
         }
 
+        // TODO: Freeze all rendering until canvas is clicked again.
+        // TODO: When min velocity drops below 1.0
         requestAnimationFrame(this.render.bind(this));
     }
 
