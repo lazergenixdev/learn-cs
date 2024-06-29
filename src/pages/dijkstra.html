@@ -21,14 +21,13 @@
         <select id="edge-node-2"></select>
         <button id="clear-tree">Clear</button>
         <input id="stiff" type="checkbox">
-        <label hidden>
-            <input type="checkbox"/>
-            Balance Factors
-        </label>
-        <label hidden>
-            <input type="checkbox" checked/>
-            Only insert if valid
-        </label>
+        <select id="mode">
+            <option value="0" selected>Move Nodes</option>
+            <option value="1">Add Node</option>
+            <option value="2">Add Edge</option>
+            <option value="3">Remove Node</option>
+            <option value="4">Remove Edge</option>
+        </select>
     </div>
     <graph-view></graph-view>
 </body>

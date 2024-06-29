@@ -66,3 +66,7 @@ input, select {
 input:hover, select:hover {
 	border-color: white;
 }
+
+select#mode {
+	width: fit-content;
+}
