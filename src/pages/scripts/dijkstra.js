@@ -15,10 +15,10 @@ function removeOverlay() {
 overlay.addEventListener('click', removeOverlay);
 
 graphView.setCallback('addnode', (x,y,add_node)=>{
-    overlay.style.display = "inherit";
-    cancel = () => { addNodeDialog.style.display = "none"; };
-
     const addNodeDialog = document.getElementById('add-node-dialog');
+    cancel = () => { addNodeDialog.style.display = "none"; };
+    overlay.style.display = "inherit";
+
     const rect = graphView.getBoundingClientRect();
     // TODO: This can be offscreen, fix pls
     addNodeDialog.style.left = `${x + rect.left}px`;
@@ -28,9 +28,13 @@ graphView.setCallback('addnode', (x,y,add_node)=>{
     const input = addNodeDialog.querySelector('input');
     input.value = "";
     input.onkeydown = event => {
-        if (event.key === 'Enter') {
-            add_node(input.value);
-            removeOverlay();
+        switch (event.key) {
+            case 'Enter':
+                add_node(input.value);
+            case 'Escape':
+                removeOverlay();    
+                break;
+            default:
         }
     };
     input.focus();
@@ -56,12 +60,20 @@ const setMode = () => graphView.mode = parseInt(mode.value);
 setMode();
 mode.addEventListener('change', setMode);
 
-//const edgeNode1 = document.getElementById('edge-node-1');
-//const edgeNode2 = document.getElementById('edge-node-2');
-//nodes.forEach(node => {
-//    const optionElement = document.createElement('option');
-//    optionElement.textContent = "A";
-//    optionElement.value = node; // Set the value attribute to the item
-//    edgeNode1.appendChild(optionElement);
-//    edgeNode2.appendChild(optionElement.cloneNode(true));
-//});
+// Shortcuts
+document.addEventListener('keydown', event => {
+    if (window.getComputedStyle(overlay).display !== "none")
+        return;
+
+    const map = {
+        "1": 0,
+        "2": 1,
+        "3": 2,
+        "4": 3,
+        "5": 4,
+    };
+    const value = map[event.key];
+    if (typeof value === 'number') {
+        graphView.mode = mode.value = value;
+    }
+});
