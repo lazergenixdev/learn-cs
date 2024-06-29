@@ -47,7 +47,7 @@ class Physics {
         graph.nodes.forEach(name => {
             const x = Math.random() * 100.0 + 10.0;
             const y = Math.random() * 100.0 + 10.0;
-            this.nodes[name] = Bodies.circle(x, y, this.nodeRadius, { restitution: 0.6, friction: 0.1, label: name })
+            this.nodes[name] = this.create_node(name, x, y);
             Matter.World.add(this.world, this.nodes[name]);
         });
         
@@ -83,6 +83,27 @@ class Physics {
         
         // Run the engine
         Matter.Runner.run(this.runner, this.engine);
+    }
+
+    create_node(name, x, y) {
+        return Matter.Bodies.circle(x, y, this.nodeRadius, {
+            restitution: 0.6,
+            friction: 0.1,
+            label: name
+        });
+    }
+
+    add_node(name, x, y, graph) {
+        if (this.nodes[name]) {
+            console.warn(`Already have a node called "${name}"`);
+            return;
+        }
+
+        console.log(`NODE ADDED: ${[name, x, y]}`);
+        
+        const node = this.create_node(name, x, y);
+        this.nodes[name] = node;
+        Matter.World.add(this.world, node);
     }
     
     maxDistanceSq() { return this.nodeRadius * this.nodeRadius * 2.0; }
@@ -149,12 +170,12 @@ const MODE_NODE_REMOVE = 3;
 const MODE_EDGE_REMOVE = 4;
 
 class GraphView extends HTMLElement {
-
     constructor() {
         super();
         // Attach a shadow root to the element.
         this.attachShadow({ mode: 'open' });
         this.mode = MODE_NORMAL;
+        this.callbacks = {};
 
         const canvas = document.createElement('canvas');
         canvas.width = this.clientWidth;
@@ -164,6 +185,10 @@ class GraphView extends HTMLElement {
             const pos = [event.clientX - rect.left, event.clientY - rect.top];
 
             switch (this.mode) {
+                case MODE_NODE_ADD:
+                    const add_node = name => { this.physics.add_node(name, ...pos, this.graph); };
+                    this.callbacks.onaddnode(...pos, add_node);
+                    break;
                 case MODE_NODE_REMOVE:
                     this.physics.remove_node(...pos, this.graph);
                     break;
@@ -186,8 +211,17 @@ class GraphView extends HTMLElement {
         this.shadowRoot.append(script, canvas);
     }
 
+    /**
+     * 
+     * @param {string} name:
+     *  - "addnode"
+     *  - "addedge" 
+     */
+    setCallback(name, callback) {
+        this.callbacks['on'+name] = callback;
+    }
+
     connectedCallback() {
-        // Invoked each time the custom element is appended into a document-connected element.
         this.render();
     }
 

@@ -1,4 +1,46 @@
 const graphView = document.querySelector('graph-view');
+const overlay = document.getElementById('overlay');
+
+let cancel = () => {};
+
+//{
+//    const rect = graphView.getBoundingClientRect();
+//    overlay.style.top  = `${rect.top}px`;
+//    overlay.style.left = `${rect.left}px`;
+//}
+function removeOverlay() {
+    cancel();
+    overlay.style.display = "none";
+}
+overlay.addEventListener('click', removeOverlay);
+
+graphView.setCallback('addnode', (x,y,add_node)=>{
+    overlay.style.display = "inherit";
+    cancel = () => { addNodeDialog.style.display = "none"; };
+
+    const addNodeDialog = document.getElementById('add-node-dialog');
+    const rect = graphView.getBoundingClientRect();
+    // TODO: This can be offscreen, fix pls
+    addNodeDialog.style.left = `${x + rect.left}px`;
+    addNodeDialog.style.top  = `${y + rect.top}px`;
+    addNodeDialog.style.display = "flex";
+
+    const input = addNodeDialog.querySelector('input');
+    input.value = "";
+    input.onkeydown = event => {
+        if (event.key === 'Enter') {
+            add_node(input.value);
+            removeOverlay();
+        }
+    };
+    input.focus();
+
+    const button = addNodeDialog.querySelector('button');
+    button.onclick = () => {
+        add_node(input.value);
+        removeOverlay();
+    };
+});
 
 const stiffToggle = document.getElementById('stiff');
 stiffToggle.addEventListener('change', () => {
