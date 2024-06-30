@@ -84,24 +84,35 @@ graphView.setCallback('addedge', (x,y,add_edge)=>{
 });
 
 const stiffToggle = document.getElementById('stiff');
-stiffToggle.checked = true;
-stiffToggle.addEventListener('change', () => {
+stiffToggle.checked = false;
+function updateStiff() {
     if (stiffToggle.checked) {
-        graphView.lockEdges();
-    } else {
         graphView.unlockEdges();
+    } else {
+        graphView.lockEdges();
     }
-});
+}
+stiffToggle.addEventListener('change', updateStiff);
+
+const directedToggle = document.getElementById('directed');
+function updateDirected() {
+    graphView.setDirected(directedToggle.checked);
+}
+directedToggle.addEventListener('change', updateDirected);
 
 const mode = document.getElementById('mode');
-const setMode = () => graphView.mode = parseInt(mode.value);
+function setMode() {
+    graphView.setMode(parseInt(mode.value));
+}
 setMode();
 mode.addEventListener('change', setMode);
 
-document.getElementById('clear').addEventListener('click', () => {
+function clearGraph() {
     if (!window.confirm("Clear graph?")) return;
     graphView.clear();
-});
+}
+
+document.getElementById('clear').addEventListener('click', clearGraph);
 
 // Shortcuts
 document.addEventListener('keydown', event => {
@@ -109,14 +120,29 @@ document.addEventListener('keydown', event => {
         return;
 
     const map = {
-        "1": 0,
-        "2": 1,
-        "3": 2,
-        "4": 3,
-        "5": 4,
+        '1': 0,
+        '2': 1,
+        '3': 2,
+        '4': 3,
+        '5': 4,
+        '6': 5,
+        'f': () => {
+            stiffToggle.checked = !stiffToggle.checked
+            updateStiff();
+        },
+        'Backspace': clearGraph,
+        'ArrowLeft':  () => graphView.step(-1),
+        'ArrowRight': () => graphView.step(+1),
     };
     const value = map[event.key];
-    if (typeof value === 'number') {
-        graphView.mode = mode.value = value;
+    switch (typeof value) {
+        case 'number':
+            graphView.setMode(mode.value = value);
+            break;
+        case 'function':
+            value();
+            break;
+    //  default:
+    //      console.log(event.key);
     }
 });

@@ -17,6 +17,8 @@ export class Graph {
          * @type {Array<Array<string|number>>}
          */
         this.edges = [];
+
+        this.directed = true;
     }
 
     /**
@@ -31,6 +33,16 @@ export class Graph {
     clear() {
         this.nodes = [];
         this.edges = [];
+    }
+
+    neighbors(name) {
+        if (this.directed) {
+            return this.edges.filter(e => e[0] === name).map(e => e[1]).sort();
+        }
+        return this.edges
+            .filter(e => e[0] === name || e[1] === name)
+            .map(e => (e[0] === name)? e[1] : e[0])
+            .sort();
     }
     
     /**
@@ -104,6 +116,18 @@ export class Graph {
             console.log(`Edge between ${nameA} and ${nameB} does not exist.`);
         }
     }
+    
+    hasNode(name) {
+        return this.nodes.includes(name);
+    }
+
+    hasEdge(nameA, nameB) {
+        const edgeIndex = this.edges.findIndex(edge => 
+            (edge[0] === nameA && edge[1] === nameB) || (edge[0] === nameB && edge[1] === nameA)
+        );
+
+        return (edgeIndex !== -1);
+    }
 
     /**
      * Returns a JSON string representation of the graph.
@@ -128,29 +152,70 @@ export class Graph {
 		return graph;
     }
 
-    /**
-     * Test function to populate the graph with nodes and edges.
-     */
-    test() {
-        // Add nodes
-        this.addNode('A');
-        this.addNode('B');
-        this.addNode('C');
-        this.addNode('D');
-        this.addNode('E');
-        this.addNode('F');
-        this.addNode('G');
+    edgesEqual(edgeA, edgeB) {
+        return (edgeA[0] === edgeB[0] && edgeA[1] === edgeB[1])
+        || (!this.directed && edgeA[0] === edgeB[1] && edgeA[1] === edgeB[0])
+    }
+
+    dfs(startNode) {
+        return this.graphSearch(
+            startNode,
+            stack => stack.pop(),
+            node => this.neighbors(node).reverse()
+        );
+    }
     
-        // Add edges with weights
-        this.addEdge('A', 'B', 5);
-        this.addEdge('A', 'C', 10);
-        this.addEdge('A', 'D', 15);
-        this.addEdge('B', 'E', 7);
-        this.addEdge('C', 'D', 11);
-        this.addEdge('C', 'F', 6);
-        this.addEdge('D', 'G', 12);
-        this.addEdge('E', 'F', 4);
-        this.addEdge('E', 'G', 3);
-        this.addEdge('F', 'G', 8);
+    bfs(startNode) {
+        return this.graphSearch(
+            startNode,
+            queue => queue.shift(),
+            node => this.neighbors(node)
+        );
+    }
+    
+    graphSearch(startNode, removeNode, neighbors) {
+        let visited = {};
+        let F = [[startNode,null]];
+        let result = [];
+        let tree = [];
+
+        let record = [];
+        const saveRecord = (activeNode, highlight) => {
+            const entry = {
+                X: Object.keys(visited),
+                F: F.map(a => a[0]),
+                edges: Object.values(tree),
+                active: activeNode,
+                ...highlight
+            };
+            record.push(entry);
+        };
+    
+        saveRecord("");
+        while (F.length > 0) {
+            let [node,prev] = removeNode(F);
+            
+            if (!visited[node]) {
+                // Visit node
+                visited[node] = true;
+                result.push(node);
+                if (prev) {
+                    tree.push([prev, node]);
+                }
+                saveRecord(node);
+                
+                // Add all unvisited neighbors
+                for (let neighbor of neighbors(node)) {
+                    if (!visited[neighbor]) {
+                        F.push([neighbor, node]);
+                        saveRecord(node, {highlightedEdge: [node, neighbor]});
+                    }
+                }
+            }
+        }
+        saveRecord("");
+    
+        console.log(record);
+        return record;
     }
 }
