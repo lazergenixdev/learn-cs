@@ -8,6 +8,7 @@ body {
 	grid-template-rows: auto 1fr;
 	color: white;
     background-color: black;
+	overflow: auto;
 }
 
 .top-bar {

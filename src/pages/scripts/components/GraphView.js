@@ -39,7 +39,6 @@ class Physics {
         this.save = saveCallback;
 
         const Bodies = Matter.Bodies;
-        const Constraint = Matter.Constraint;
         this.engine = Matter.Engine.create();
         this.world = this.engine.world;
         this.runner = Matter.Runner.create();
@@ -93,6 +92,7 @@ class Physics {
             }
         );
         Matter.World.add(this.world, this.mouseConstraint);
+        canvas.onwheel = () => {}; // Enable scrolling
 
         // Set gravity to attract towards the center of the screen
         this.world.gravity.x = 0;
