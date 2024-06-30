@@ -276,7 +276,7 @@ class GraphView extends HTMLElement {
     
             if (event.type === 'click') {
                 pos = [event.clientX - rect.left, event.clientY - rect.top];
-            } else if (event.type === 'touchend') {
+            } else if (event.type === 'touchstart') {
                 const touch = event.touches[0];
                 pos = [touch.clientX - rect.left, touch.clientY - rect.top];
             }
@@ -312,8 +312,8 @@ class GraphView extends HTMLElement {
             }
         };
 
-        this.addEventListener('click',    handleInteract);
-        this.addEventListener('touchend', handleInteract);
+        this.addEventListener('click',      handleInteract);
+        this.addEventListener('touchstart', handleInteract);
 
         {
             let g = localStorage.getItem('graph');
