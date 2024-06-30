@@ -253,12 +253,13 @@ class Physics {
     }
 }
 
-const MODE_NORMAL             = 0;
-const MODE_NODE_ADD           = 1;
-const MODE_EDGE_ADD           = 2;
-const MODE_NODE_REMOVE        = 3;
-const MODE_EDGE_REMOVE        = 4;
-const MODE_DEPTH_FIRST_SEARCH = 5;
+const MODE_NORMAL              = 0;
+const MODE_NODE_ADD            = 1;
+const MODE_EDGE_ADD            = 2;
+const MODE_NODE_REMOVE         = 3;
+const MODE_EDGE_REMOVE         = 4;
+const MODE_DEPTH_FIRST_SEARCH  = 5;
+const MODE_BREATH_FIRST_SEARCH = 6;
 
 const BACKGROUND_COLOR = '#1a1a1a';
 const DEFAULT_COLOR = 'dimgray';
@@ -313,7 +314,7 @@ class GraphView extends HTMLElement {
                 case MODE_EDGE_REMOVE:
                     this.physics.remove_edge(...pos, this.graph);
                     break;
-                case MODE_DEPTH_FIRST_SEARCH:
+                case MODE_DEPTH_FIRST_SEARCH: {
                     const node = this.physics.find_closest_node(...pos);
                     if (node) {
                         this.startNode = node.label;
@@ -321,6 +322,18 @@ class GraphView extends HTMLElement {
                         this.result = this.graph.dfs(this.startNode);
                         this.setInfo();
                     }
+                    break;
+                }
+                case MODE_BREATH_FIRST_SEARCH: {
+                    const node = this.physics.find_closest_node(...pos);
+                    if (node) {
+                        this.startNode = node.label;
+                        this.index = 0;
+                        this.result = this.graph.bfs(this.startNode);
+                        this.setInfo();
+                    }
+                    break;
+                }
                 default:
             }
         };
@@ -366,7 +379,7 @@ class GraphView extends HTMLElement {
             position: absolute;
             color: white;
             font-family: monospace;
-            font-size: 24px;
+            font-size: 20px;
         }
         .line {
             padding: 4px;
@@ -406,7 +419,11 @@ class GraphView extends HTMLElement {
             if (!this.graph.hasNode(this.startNode)) {
                 this.startNode = this.graph.nodes[0];
             }
-            this.result = this.graph.dfs(this.startNode);
+            const map = {};
+            if (m === MODE_DEPTH_FIRST_SEARCH)
+                this.result = this.graph.dfs(this.startNode);
+            if (m === MODE_BREATH_FIRST_SEARCH)
+                this.result = this.graph.bfs(this.startNode);
         }
         else {
             delete this.result;
@@ -419,6 +436,8 @@ class GraphView extends HTMLElement {
         switch (this.mode) {
             case MODE_DEPTH_FIRST_SEARCH:
                 return "Depth-First Search";
+            case MODE_BREATH_FIRST_SEARCH:
+                return "Breath-First Search";
             default:
                 return null;
         }
@@ -433,16 +452,21 @@ class GraphView extends HTMLElement {
         }
 
         const r = this.result[this.index];
+        let ds = "Stack";
+        if (this.mode === MODE_BREATH_FIRST_SEARCH)
+            ds = "Queue";
         info.innerHTML = `
         <div class="line">${this.algorithmName()}</div>
         <div class="line"><div class="icon" style="background-color: ${VISITED_COLOR};"></div>Visited (${r.X})</div>
-        <div class="line"><div class="icon" style="background-color: ${PENDING_COLOR};"></div>Stack (${r.F})</div>
+        <div class="line"><div class="icon" style="background-color: ${PENDING_COLOR};"></div>${ds} (${r.F})</div>
         `;
     }
     
     step(d) {
-        this.index = Math.min(Math.max(this.index + d, 0), this.result.length-1);
-        this.setInfo();    
+        if (this.mode >= MODE_DEPTH_FIRST_SEARCH) {
+            this.index = Math.min(Math.max(this.index + d, 0), this.result.length-1);
+            this.setInfo();
+        }
     }
 
     hasEdge(a, b) {
@@ -493,8 +517,10 @@ class GraphView extends HTMLElement {
     }
     
     nodeActive(node) {
-        const r = this.result[this.index];
-        return r.active === node.label;
+        if (this.result) {
+            const r = this.result[this.index];
+            return r.active === node.label;
+        }
     }
 
     /**
@@ -568,22 +594,20 @@ class GraphView extends HTMLElement {
             ctx.lineWidth = 10; 
             ctx.strokeText(w, x, y);
             ctx.fillStyle = (removedEdge === edge)? 'red' : 'white';
+            //if (this.mode >= MODE_DEPTH_FIRST_SEARCH) ctx.fillStyle = 'gray';
             ctx.fillText(w, x, y);
         });
         
         this.specialNode = null;
         const mousePosition = this.physics.mouseConstraint.constraint.pointA;
-        if (this.mode === MODE_NODE_REMOVE) {
+        const modes = [
+            MODE_NODE_REMOVE,
+            MODE_EDGE_ADD,
+            MODE_DEPTH_FIRST_SEARCH,
+            MODE_BREATH_FIRST_SEARCH,
+        ];
+        if (modes.includes(this.mode)) {
             this.specialNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
-            //color_node = node => (specialNode?.label === node.label)? 'red' : 'blue';
-        }
-        else if (this.mode === MODE_EDGE_ADD) {
-            this.specialNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
-            //color_node = node => (specialNode?.label === node.label)? 'lime' : 'blue';
-        }
-        else if (this.mode === MODE_DEPTH_FIRST_SEARCH) {
-            this.specialNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
-            //color_node = node => (specialNode?.label === node.label)? 'dodgerblue' : 'blue';
         }
         
         // Render nodes

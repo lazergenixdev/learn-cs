@@ -5,7 +5,7 @@ html, body {
     margin: 0;
     padding: 0;
     font-family: sans-serif;
-    background-color: red; /* Adjust as needed */
+    background-color: black; /* Adjust as needed */
 }
 
 body {
@@ -23,7 +23,7 @@ body {
 	gap: 10px;
 }
 
-.home-button {
+a:has(svg) {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -34,11 +34,6 @@ body {
 	border-radius: 5px;
 	text-decoration: none;
 	border: 2px black solid;
-}
-
-.home-button:hover {
-	background-color: #777;
-	border-color: white;
 }
 
 button {
@@ -52,9 +47,21 @@ button {
 	font-size: 18px;
 }
 
-button:hover {
+button:has(svg) {
+	padding: 8px;
+}
+
+button:hover, a:hover {
 	background-color: #777;
 	border-color: white;
+}
+
+button[disabled] {
+	background-color: black;
+}
+
+button[disabled]:hover {
+	border-color: black;
 }
 
 .checkbox {

@@ -100,9 +100,15 @@ function updateDirected() {
 }
 directedToggle.addEventListener('change', updateDirected);
 
+const stepBackwardButton = document.getElementById('step-backward');
+const stepForwardButton  = document.getElementById('step-forward');
+
 const mode = document.getElementById('mode');
 function setMode() {
-    graphView.setMode(parseInt(mode.value));
+    const m = parseInt(mode.value);
+    graphView.setMode(m);
+    stepBackwardButton.disabled = (m < 5);
+    stepForwardButton.disabled = (m < 5);
 }
 setMode();
 mode.addEventListener('change', setMode);
@@ -126,6 +132,7 @@ document.addEventListener('keydown', event => {
         '4': 3,
         '5': 4,
         '6': 5,
+        '7': 6,
         'f': () => {
             stiffToggle.checked = !stiffToggle.checked
             updateStiff();
@@ -137,7 +144,8 @@ document.addEventListener('keydown', event => {
     const value = map[event.key];
     switch (typeof value) {
         case 'number':
-            graphView.setMode(mode.value = value);
+            mode.value = value;
+            setMode();
             break;
         case 'function':
             value();
@@ -146,3 +154,6 @@ document.addEventListener('keydown', event => {
     //      console.log(event.key);
     }
 });
+
+document.getElementById('step-backward').addEventListener('click', () => graphView.step(-1));
+document.getElementById('step-forward') .addEventListener('click', () => graphView.step(+1));
