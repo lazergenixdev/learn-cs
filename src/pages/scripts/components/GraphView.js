@@ -270,9 +270,16 @@ class GraphView extends HTMLElement {
         this.freezeRender = false;
 
         const canvas = document.createElement('canvas');
-        this.addEventListener('click', event => {
+        const handleInteract = event => {
             const rect = canvas.getBoundingClientRect(); // Get element's position relative to viewport
-            const pos = [event.clientX - rect.left, event.clientY - rect.top];
+            let pos;
+    
+            if (event.type === 'click') {
+                pos = [event.clientX - rect.left, event.clientY - rect.top];
+            } else if (event.type === 'touchend') {
+                const touch = event.touches[0];
+                pos = [touch.clientX - rect.left, touch.clientY - rect.top];
+            }
 
             switch (this.mode) {
                 case MODE_NODE_ADD:
@@ -303,7 +310,10 @@ class GraphView extends HTMLElement {
                     break;
                 default:
             }
-        });
+        };
+
+        this.addEventListener('click',    handleInteract);
+        this.addEventListener('touchend', handleInteract);
 
         {
             let g = localStorage.getItem('graph');
@@ -323,13 +333,26 @@ class GraphView extends HTMLElement {
 
         const style = document.createElement('style');
         style.innerHTML = `
-        div {
+        :host {
+            display: block;
             width: 100%;
             height: 100%;
+            box-sizing: border-box;
+        }
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
         }
         `;
 
         const div = document.createElement('div');
+        div.classList.add('canvas-container');
         div.appendChild(canvas);
 
         this.shadowRoot.append(style, script, div);
