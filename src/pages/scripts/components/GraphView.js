@@ -270,9 +270,7 @@ class GraphView extends HTMLElement {
         this.freezeRender = false;
 
         const canvas = document.createElement('canvas');
-        canvas.width = this.clientWidth;
-        canvas.height = this.clientHeight;
-        canvas.addEventListener('click', event => {
+        this.addEventListener('click', event => {
             const rect = canvas.getBoundingClientRect(); // Get element's position relative to viewport
             const pos = [event.clientX - rect.left, event.clientY - rect.top];
 
@@ -323,7 +321,20 @@ class GraphView extends HTMLElement {
             this.physics = new Physics(canvas, this.graph, () => this.save());
         };
 
-        this.shadowRoot.append(script, canvas);
+        const style = document.createElement('style');
+        style.innerHTML = `
+        div {
+            width: 100%;
+            height: 100%;
+        }
+        `;
+
+        const div = document.createElement('div');
+        div.appendChild(canvas);
+
+        this.shadowRoot.append(style, script, div);
+
+        window.addEventListener('resize', event => this.handleResize());
     }
 
     /**
@@ -337,6 +348,16 @@ class GraphView extends HTMLElement {
     }
 
     connectedCallback() {
+        this.handleResize();
+        this.render();
+    }
+
+    handleResize() {
+        const canvas = this.shadowRoot.querySelector('canvas');
+        const div    = this.shadowRoot.querySelector('div');
+        console.log(`RESIZE ${[this.clientWidth, this.clientHeight]}`);
+        canvas.width  = div.clientWidth;
+        canvas.height = div.clientHeight;
         this.render();
     }
 
