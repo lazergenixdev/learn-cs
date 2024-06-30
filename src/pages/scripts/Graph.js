@@ -174,7 +174,7 @@ export class Graph {
     }
     
     graphSearch(startNode, removeNode, neighbors) {
-        let visited = {};
+        let visited = [];
         let F = [[startNode,null]];
         let result = [];
         let tree = [];
@@ -182,7 +182,7 @@ export class Graph {
         let record = [];
         const saveRecord = (activeNode, highlight) => {
             const entry = {
-                X: Object.keys(visited),
+                X: Object.values(visited),
                 F: F.map(a => a[0]),
                 edges: Object.values(tree),
                 active: activeNode,
@@ -195,9 +195,9 @@ export class Graph {
         while (F.length > 0) {
             let [node,prev] = removeNode(F);
             
-            if (!visited[node]) {
+            if (!visited.includes(node)) {
                 // Visit node
-                visited[node] = true;
+                visited.push(node);
                 result.push(node);
                 if (prev) {
                     tree.push([prev, node]);
@@ -206,7 +206,7 @@ export class Graph {
                 
                 // Add all unvisited neighbors
                 for (let neighbor of neighbors(node)) {
-                    if (!visited[neighbor]) {
+                    if (!visited.includes(neighbor)) {
                         F.push([neighbor, node]);
                         saveRecord(node, {highlightedEdge: [node, neighbor]});
                     }
