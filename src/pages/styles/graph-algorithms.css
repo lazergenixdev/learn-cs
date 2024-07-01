@@ -1,17 +1,12 @@
 @import url("hide-number-spinners.css");
 
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: sans-serif;
-    background-color: black; /* Adjust as needed */
-}
-
 body {
-    display: block;
-	grid-template-columns: auto 1fr;
-    color: white;
+	font-family: sans-serif;
+	margin: 0;
+	height: 100vh;
+	display: grid;
+	grid-template-rows: auto 1fr;
+	color: white;
 }
 
 .top-bar {

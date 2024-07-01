@@ -98,6 +98,7 @@ const directedToggle = document.getElementById('directed');
 function updateDirected() {
     graphView.setDirected(directedToggle.checked);
 }
+updateDirected();
 directedToggle.addEventListener('change', updateDirected);
 
 const stepBackwardButton = document.getElementById('step-backward');
@@ -131,8 +132,10 @@ document.addEventListener('keydown', event => {
         '3': 2,
         '4': 3,
         '5': 4,
-        '6': 5,
+        //'6': 5,
         '7': 6,
+        '8': 7,
+        '9': 8,
         'f': () => {
             stiffToggle.checked = !stiffToggle.checked
             updateStiff();

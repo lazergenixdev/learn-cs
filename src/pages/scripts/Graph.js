@@ -129,6 +129,17 @@ export class Graph {
         return (edgeIndex !== -1);
     }
 
+    weight(nameA, nameB) {
+        const edgeIndex = this.edges.findIndex(edge => 
+            (edge[0] === nameA && edge[1] === nameB) || (edge[0] === nameB && edge[1] === nameA)
+        );
+
+        if (edgeIndex !== -1) {
+            return this.edges[edgeIndex][2];
+        }
+        return null;
+    }
+
     /**
      * Returns a JSON string representation of the graph.
      * @returns {string} JSON string representing the graph.
@@ -172,10 +183,56 @@ export class Graph {
             node => this.neighbors(node)
         );
     }
+
+    dijkstra(startNode) {
+        const dist = {};
+        const prev = {};
+        const visited = [];
+        for (const name of this.nodes) {
+            dist[name] = 1e999;
+        }
+        dist[startNode] = 0;
+        const H = [[startNode, 0]];
+        
+        let record = [];
+        const saveRecord = (activeNode, highlight) => {
+            const entry = {
+                X: Object.values(visited),
+                F: H.map(a => a[0]),
+                edges: Object.entries(prev).map(e => e.reverse()),
+                active: activeNode,
+                dist: {...dist},
+                ...highlight
+            };
+            record.push(entry);
+        };
+
+        saveRecord("");
+        while (H.length > 0) {
+            const [u,d] = H.pop();
+            if (!visited.includes(u))
+                visited.push(u);
+            saveRecord(u);
+
+            for (const v of this.neighbors(u)) {
+                const w = this.weight(u,v);
+                if (dist[v] > dist[u] + w) {
+                    dist[v] = dist[u] + w;
+                    prev[v] = u;
+                    H.push([v, dist[v]]);
+                    H.sort((a,b) => a[1] == b[1]? b[0].localeCompare(a[0]) : b[1] - a[1]);
+                    saveRecord(u, {highlightedEdge: [u, v]});
+                }
+            }
+        }
+        saveRecord("");
+        
+        return record;
+    }
     
-    graphSearch(startNode, removeNode, neighbors) {
+    graphSearch(startNode, removeNode, neighbors, insertNode = (A, node) => A.push(node)) {
         let visited = [];
-        let F = [[startNode,null]];
+        let F = [startNode];
         let result = [];
         let tree = [];
 
@@ -193,7 +250,7 @@ export class Graph {
     
         saveRecord("");
         while (F.length > 0) {
-            let [node,prev] = removeNode(F);
+            const [node,prev] = removeNode(F);
             
             if (!visited.includes(node)) {
                 // Visit node
@@ -205,9 +262,9 @@ export class Graph {
                 saveRecord(node);
                 
                 // Add all unvisited neighbors
-                for (let neighbor of neighbors(node)) {
+                for (const neighbor of neighbors(node)) {
                     if (!visited.includes(neighbor)) {
-                        F.push([neighbor, node]);
+                        insertNode(F, [neighbor, node]);
                         saveRecord(node, {highlightedEdge: [node, neighbor]});
                     }
                 }
@@ -215,7 +272,6 @@ export class Graph {
         }
         saveRecord("");
     
-        console.log(record);
         return record;
     }
 }

@@ -258,8 +258,12 @@ const MODE_NODE_ADD            = 1;
 const MODE_EDGE_ADD            = 2;
 const MODE_NODE_REMOVE         = 3;
 const MODE_EDGE_REMOVE         = 4;
-const MODE_DEPTH_FIRST_SEARCH  = 5;
-const MODE_BREATH_FIRST_SEARCH = 6;
+const MODE_EDGE_FLIP           = 5;
+const MODE_DEPTH_FIRST_SEARCH  = 6;
+const MODE_BREATH_FIRST_SEARCH = 7;
+const MODE_DIJKSTRA            = 8;
+const MODE_KRUSKAL             = 9;
+const MODE_PRIM                = 10;
 
 const BACKGROUND_COLOR = '#1a1a1a';
 const DEFAULT_COLOR = 'dimgray';
@@ -330,6 +334,16 @@ class GraphView extends HTMLElement {
                         this.startNode = node.label;
                         this.index = 0;
                         this.result = this.graph.bfs(this.startNode);
+                        this.setInfo();
+                    }
+                    break;
+                }
+                case MODE_DIJKSTRA: {
+                    const node = this.physics.find_closest_node(...pos);
+                    if (node) {
+                        this.startNode = node.label;
+                        this.index = 0;
+                        this.result = this.graph.dijkstra(this.startNode);
                         this.setInfo();
                     }
                     break;
@@ -424,6 +438,8 @@ class GraphView extends HTMLElement {
                 this.result = this.graph.dfs(this.startNode);
             if (m === MODE_BREATH_FIRST_SEARCH)
                 this.result = this.graph.bfs(this.startNode);
+            if (m === MODE_DIJKSTRA)
+                this.result = this.graph.dijkstra(this.startNode);
         }
         else {
             delete this.result;
@@ -438,6 +454,8 @@ class GraphView extends HTMLElement {
                 return "Depth-First Search";
             case MODE_BREATH_FIRST_SEARCH:
                 return "Breath-First Search";
+            case MODE_DIJKSTRA:
+                return "Dijkstra's Algorithm";
             default:
                 return null;
         }
@@ -455,6 +473,8 @@ class GraphView extends HTMLElement {
         let ds = "Stack";
         if (this.mode === MODE_BREATH_FIRST_SEARCH)
             ds = "Queue";
+        if (this.mode === MODE_DIJKSTRA)
+            ds = "PQueue";
         info.innerHTML = `
         <div class="line">${this.algorithmName()}</div>
         <div class="line"><div class="icon" style="background-color: ${VISITED_COLOR};"></div>Visited (${r.X})</div>
@@ -586,15 +606,16 @@ class GraphView extends HTMLElement {
             ctx.fillStyle   = style;
             this.drawEdge(ctx, edge);
         });
-        this.physics.edges.forEach(edge => {
+        if (this.mode !== MODE_DEPTH_FIRST_SEARCH &&
+            this.mode !== MODE_BREATH_FIRST_SEARCH 
+        ) this.physics.edges.forEach(edge => {
             const w = `${edge.weight}`;
             const [x,y] = mix(edge.bodyA, edge.bodyB);
 
             ctx.strokeStyle = BACKGROUND_COLOR;
             ctx.lineWidth = 10; 
             ctx.strokeText(w, x, y);
-            ctx.fillStyle = (removedEdge === edge)? 'red' : 'white';
-            //if (this.mode >= MODE_DEPTH_FIRST_SEARCH) ctx.fillStyle = 'gray';
+            ctx.fillStyle = (removedEdge === edge)? 'red' : this.edgeColor(edge);
             ctx.fillText(w, x, y);
         });
         
@@ -605,6 +626,7 @@ class GraphView extends HTMLElement {
             MODE_EDGE_ADD,
             MODE_DEPTH_FIRST_SEARCH,
             MODE_BREATH_FIRST_SEARCH,
+            MODE_DIJKSTRA,
         ];
         if (modes.includes(this.mode)) {
             this.specialNode = this.physics.find_closest_node(mousePosition.x, mousePosition.y);
@@ -661,6 +683,19 @@ class GraphView extends HTMLElement {
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 ctx.lineWidth = 4;
+            }
+            
+            if (this.result && this.result[this.index]) {
+                if (this.result[this.index].dist) {
+                    const distance = () => {
+                        const d = this.result[this.index].dist[name];
+                        if (d === Infinity) return '∞';
+                        else return `${d}`;
+                    }
+                    ctx.strokeStyle = 'black'
+                    ctx.strokeText(distance(), node.position.x, node.position.y+34);
+                    ctx.fillText(distance(), node.position.x, node.position.y+34);
+                }
             }
         }
     }
